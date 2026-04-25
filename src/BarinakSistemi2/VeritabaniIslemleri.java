@@ -2,14 +2,14 @@ package BarinakSistemi2;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.util.ArrayList; 
+import java.util.ArrayList;
 import java.util.List;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 
 public class VeritabaniIslemleri {
-    
+
     // Proje klasöründe barinak.db dosyası oluşacak
     private static final String URL = "jdbc:sqlite:barinak.db";
 
@@ -48,7 +48,7 @@ public class VeritabaniIslemleri {
             pstmt.setString(3, h.getTur());
             pstmt.setInt(4, h.getYas());
             pstmt.setString(5, h.getSaglikDurumu());
-            
+
             // Abstract sınıf olduğu için Kedi mi Köpek mi kontrol ediyoruz
             if (h instanceof Kedi) {
                 pstmt.setString(6, ((Kedi) h).getIrk());
@@ -58,7 +58,7 @@ public class VeritabaniIslemleri {
                 pstmt.setString(6, "Bilinmiyor");
             }
             pstmt.setString(7, h.getDurum());
-            
+
             pstmt.executeUpdate();
         } catch (Exception e) {
             System.err.println("Hayvan DB'ye eklenemedi: " + e.getMessage());
@@ -149,6 +149,6 @@ public class VeritabaniIslemleri {
         }
         return liste;
     }
-    
-    
+
+
 }

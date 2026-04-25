@@ -10,10 +10,10 @@ import java.util.stream.Collectors;
  */
 public class BarinakYoneticisi {
 
-    private List<Hayvan>               hayvanlar;
-    private List<Calisan>              calisanlar;
-    private List<Musteri>              musteriler;
-    private List<SahiplenmeBasvurusu>  basvurular;
+    private List<Hayvan> hayvanlar;
+    private List<Calisan> calisanlar;
+    private List<Musteri> musteriler;
+    private List<SahiplenmeBasvurusu> basvurular;
 
     // ── Singleton ────────────────────────────────────────────────────────────────
 
@@ -27,14 +27,14 @@ public class BarinakYoneticisi {
     }
 
     private BarinakYoneticisi() {
-            // Sistem açılır açılmaz veritabanındaki kayıtlar listelere doldurulur
-            this.hayvanlar  = VeritabaniIslemleri.hayvanlariGetir();
-            this.calisanlar = VeritabaniIslemleri.calisanlariGetir();
-            this.musteriler = VeritabaniIslemleri.musterileriGetir();
+        // Sistem açılır açılmaz veritabanındaki kayıtlar listelere doldurulur
+        this.hayvanlar = VeritabaniIslemleri.hayvanlariGetir();
+        this.calisanlar = VeritabaniIslemleri.calisanlariGetir();
+        this.musteriler = VeritabaniIslemleri.musterileriGetir();
 
-            // Başvurular için veritabanı tablosu yapmadığımızdan boş başlatıyoruz
-            this.basvurular = new ArrayList<>();
-        }
+        // Başvurular için veritabanı tablosu yapmadığımızdan boş başlatıyoruz
+        this.basvurular = new ArrayList<>();
+    }
 
     // ── Hayvan Yönetimi ──────────────────────────────────────────────────────────
 
@@ -94,7 +94,7 @@ public class BarinakYoneticisi {
             boolean ayniMusteri = b.getMusteri() != null
                     && basvuru.getMusteri() != null
                     && b.getMusteri().getCustomerId()
-                       .equals(basvuru.getMusteri().getCustomerId());
+                            .equals(basvuru.getMusteri().getCustomerId());
             boolean ayniHayvan = b.getHayvan() != null
                     && basvuru.getHayvan() != null
                     && b.getHayvan().getAnimalId() == basvuru.getHayvan().getAnimalId();
@@ -197,10 +197,21 @@ public class BarinakYoneticisi {
 
     // ── Getters ──────────────────────────────────────────────────────────────────
 
-    public List<Hayvan>              getHayvanlar()  { return new ArrayList<>(hayvanlar); }
-    public List<Calisan>             getCalisanlar() { return new ArrayList<>(calisanlar); }
-    public List<Musteri>             getMusteriler() { return new ArrayList<>(musteriler); }
-    public List<SahiplenmeBasvurusu> getBasvurular() { return new ArrayList<>(basvurular); }
+    public List<Hayvan> getHayvanlar() {
+        return new ArrayList<>(hayvanlar);
+    }
+
+    public List<Calisan> getCalisanlar() {
+        return new ArrayList<>(calisanlar);
+    }
+
+    public List<Musteri> getMusteriler() {
+        return new ArrayList<>(musteriler);
+    }
+
+    public List<SahiplenmeBasvurusu> getBasvurular() {
+        return new ArrayList<>(basvurular);
+    }
 
     public void musteriListeme() {
 

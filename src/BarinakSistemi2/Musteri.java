@@ -14,7 +14,7 @@ public class Musteri extends Person {
         this.address = address;
         this.phone = phone;
     }
-    
+
     public void setCustomerId(String customerId) {
     	this.customerId = customerId;
     }
@@ -24,7 +24,7 @@ public class Musteri extends Person {
     public void setPhone(String phone) {
     	this.phone = phone;
     }
-    
+
     public String getCustomerId() {
     	return customerId;
     }
@@ -34,7 +34,7 @@ public class Musteri extends Person {
     public String getPhone() {
     	return phone;
     }
-    
+
     @Override
     public String getInfo() {
         return "Müşteri: " + getName() + " | Tel: " + phone;
@@ -51,6 +51,6 @@ public class Musteri extends Person {
 
     public List<Hayvan> filtrele(String tur, int yas) {
         System.out.println(tur + " türünde ve " + yas + " yaşındaki hayvanlar filtreleniyor...");
-        return new ArrayList<>(); 
+        return new ArrayList<>();
     }
 }

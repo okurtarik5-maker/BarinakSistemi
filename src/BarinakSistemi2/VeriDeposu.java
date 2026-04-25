@@ -25,7 +25,7 @@ public class VeriDeposu<T> {
     public void sil(T oge) {
         kayitlar.remove(oge);
     }
-    
+
     // Listedeki eleman sayısını döndürür
     public int boyut() {
         return kayitlar.size();

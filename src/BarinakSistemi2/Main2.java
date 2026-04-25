@@ -3,6 +3,7 @@ package BarinakSistemi2;
 import java.util.Date;
 import java.util.Scanner;
 import java.util.InputMismatchException;
+import java.util.List;
 
 public class Main2 {
 	public static void main(String args[]) {
@@ -28,6 +29,7 @@ public class Main2 {
 				System.out.println("3-) Müşteri ekle");
 				System.out.println("4-) Çalışan ekle");
 				System.out.println("5-) Durum Raporu");
+				System.out.println("6-) Musteri Listele");
 				System.out.println("0-) Sistemden çıkış");
 				System.out.print("Seçiminiz: ");
 
@@ -322,7 +324,10 @@ public class Main2 {
 					case 5: {
 						yonetici.durumRaporuYazdir();
 						break; }
-
+                    case 6: {
+						yonetici.musteriListeme();
+						break;
+					}
 					default: {
 						System.out.println("Hatalı tuşlama yaptınız.");
 						break; }

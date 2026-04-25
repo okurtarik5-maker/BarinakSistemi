@@ -31,7 +31,7 @@ public class BarinakYoneticisi {
             this.hayvanlar  = VeritabaniIslemleri.hayvanlariGetir();
             this.calisanlar = VeritabaniIslemleri.calisanlariGetir();
             this.musteriler = VeritabaniIslemleri.musterileriGetir();
-            
+
             // Başvurular için veritabanı tablosu yapmadığımızdan boş başlatıyoruz
             this.basvurular = new ArrayList<>();
         }
@@ -201,4 +201,18 @@ public class BarinakYoneticisi {
     public List<Calisan>             getCalisanlar() { return new ArrayList<>(calisanlar); }
     public List<Musteri>             getMusteriler() { return new ArrayList<>(musteriler); }
     public List<SahiplenmeBasvurusu> getBasvurular() { return new ArrayList<>(basvurular); }
+
+    public void musteriListeme() {
+
+        System.out.println("Müşteriler listeleniyor");
+
+        if (musteriler.isEmpty()) {
+            System.out.println("Kayıtlı müşteri yok");
+        } else {
+            for (Musteri m : musteriler) {
+                System.out.printf("Id: %d İsim: %s Mail: %s Çalışan Id: %s Adres: %s Telefon numarası: %s\n", m.getId(),
+                        m.getName(), m.getEmail(), m.getCustomerId(), m.getAddress(), m.getPhone());
+            }
+        }
+    }
 }

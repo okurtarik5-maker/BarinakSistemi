@@ -8,7 +8,7 @@ public class Main2 {
 	public static void main(String args[]) {
 
 		VeritabaniIslemleri.tablolariOlustur();
-		
+
 		Scanner scan = new Scanner(System.in);
 
 		System.out.println("--- Akıllı Barınak Sistemi Başlatılıyor ---");
@@ -41,13 +41,13 @@ public class Main2 {
 						scan.close();
 						break;
 
-					case 1:
-						
+					case 1: {
+
 						if (yonetici.tumCalisanlariListele().isEmpty()) {
 							System.out.println("Sistemde kayıtlı çalışan yok.");
 							break;
 						}
-						
+
 						System.out.print("Çalışan Id numarası: ");
 						String ID = scan.nextLine();
 						Calisan aktifCalisan = null;
@@ -60,8 +60,7 @@ public class Main2 {
 						}
 
 						if (aktifCalisan == null) {
-							System.err.println("Hata: çalışan bulunamadı.");
-							break;
+							throw new BarinakIstisnasi("Belirtilen ID numarasına ait çalışan bulunamadı!");
 						}
 
 						System.out.println("Yeni hayvan girişi.");
@@ -74,7 +73,7 @@ public class Main2 {
 
 						switch (secim) {
 
-							case 1:
+							case 1: {
 								System.out.print("Köpeğin ID'si: ");
 								int animalId = scan.nextInt();
 								scan.nextLine();
@@ -82,12 +81,20 @@ public class Main2 {
 								System.out.print("Köpeğin ismi: ");
 								String name = scan.nextLine();
 
+								if (name == null || name.trim().isEmpty()) {
+								    throw new IllegalArgumentException("Hayvan ismi boş bırakılamaz!");
+								}
+
 								System.out.print("Köpeğin türü: ");
 								String tur = scan.nextLine();
 
 								System.out.print("Köpeğin yaşı: ");
 								int yas = scan.nextInt();
 								scan.nextLine();
+
+								if(yas < 0 || yas > 30) {
+									throw new IllegalArgumentException("Hayvan yaşı 0'dan küçük veya 30'dan büyük olamaz!");
+								}
 
 								System.out.print("Köpeğin sağlık durumu: ");
 								String saglikDurumu = scan.nextLine();
@@ -97,42 +104,50 @@ public class Main2 {
 
 								Hayvan yeniKopek = new Kopek(animalId, name, tur, yas, saglikDurumu, irk);
 								aktifCalisan.hayvanEkle();
-								yonetici.hayvanEkle(yeniKopek);								
-								break;
+								yonetici.hayvanEkle(yeniKopek);
+								break; }
 
-							case 2:
+							case 2: {
 								System.out.print("Kedinin ID'si: ");
-								animalId = scan.nextInt();
+								int animalId = scan.nextInt();
 								scan.nextLine();
 
 								System.out.print("Kedinin ismi: ");
-								name = scan.nextLine();
+								String name = scan.nextLine();
+
+								if (name == null || name.trim().isEmpty()) {
+								    throw new IllegalArgumentException("Hayvan ismi boş bırakılamaz!");
+								}
 
 								System.out.print("Kedinin türü: ");
-								tur = scan.nextLine();
+								String tur = scan.nextLine();
 
 								System.out.print("Kedinin yaşı: ");
-								yas = scan.nextInt();
+								int yas = scan.nextInt();
 								scan.nextLine();
 
+								if(yas < 0 || yas > 30) {
+									throw new IllegalArgumentException("Hayvan yaşı 0'dan küçük veya 30'dan büyük olamaz!");
+								}
+
 								System.out.print("Kedinin sağlık durumu: ");
-								saglikDurumu = scan.nextLine();
+								String saglikDurumu = scan.nextLine();
 
 								System.out.print("Kedinin ırkı: ");
-								irk = scan.nextLine();
+								String irk = scan.nextLine();
 
 								Hayvan yeniKedi = new Kedi(animalId, name, tur, yas, saglikDurumu, irk);
 								aktifCalisan.hayvanEkle();
 								yonetici.hayvanEkle(yeniKedi);
-								break;
+								break;}
 
-							default:
+							default: {
 								System.out.println("Geçersiz seçim.");
-								break;
+								break; }
 						}
-						break;
+						break; }
 
-					case 2:
+					case 2: {
 						if (yonetici.tumMusterileriListele().isEmpty()) {
 							System.out.println("Sistemde kayıtlı müşteri yok.");
 							break;
@@ -140,6 +155,11 @@ public class Main2 {
 
 						System.out.print("\nAdınız: ");
 						String ad = scan.nextLine();
+
+						if (ad == null || ad.trim().isEmpty()) {
+						    throw new IllegalArgumentException("Müşteri ismi boş bırakılamaz!");
+						}
+
 						Musteri aktifMusteri = null;
 
 						for (Musteri m : yonetici.tumMusterileriListele()) {
@@ -150,13 +170,11 @@ public class Main2 {
 						}
 
 						if (aktifMusteri == null) {
-							System.err.println("Sistemde kaydınız bulunmamaktadır.");
-							break;
+							throw new BarinakIstisnasi("Sistemde kaydınız bulunmamaktadır!");
 						}
 
 						if (yonetici.tumHayvanlariListele().isEmpty()) {
-							System.out.println("Barınakta sahiplenilebilecek hayvan yok.");
-							break;
+							throw new BarinakIstisnasi("Barınakta sahiplenilebilecek hayvan bulunmamakta.");
 						}
 
 						System.out.println("\n--- Sahiplenilebilecek Hayvanlar ---");
@@ -166,6 +184,11 @@ public class Main2 {
 
 						System.out.print("\nSahiplenmek istediğiniz hayvanın adı: ");
 						String arananHayvan = scan.nextLine();
+
+						if (arananHayvan == null || arananHayvan.trim().isEmpty()) {
+						    throw new IllegalArgumentException("Hayvan ismi boş bırakılamaz!");
+						}
+
 						Hayvan secilenHayvan = null;
 
 						for (Hayvan h : yonetici.tumHayvanlariListele()) {
@@ -186,20 +209,36 @@ public class Main2 {
 						);
 						aktifMusteri.basvuruYap();
 						yonetici.basvuruKaydet(yeniBasvuru);
-						break;
+						break; }
 
-					case 3:
+					case 3: {
 						System.out.println("Yeni müşteri kaydı");
 
-						System.out.print("Müşteri Id numarası: ");
+						System.out.print("Müşteri TC numarası: ");
 						int id = scan.nextInt();
 						scan.nextLine();
+
+						for(Musteri mevcutMusteri : yonetici.tumMusterileriListele()) {
+							if(mevcutMusteri.getId() == id) {
+								throw new BarinakIstisnasi(id+" numarasına sahip musteri bulunmakta!");
+							}
+						}
 
 						System.out.print("Müşteri ismi: ");
 						String isim = scan.nextLine();
 
+						if (isim == null || isim.trim().isEmpty()) {
+						    throw new IllegalArgumentException("Müşteri ismi boş bırakılamaz!");
+						}
+
 						System.out.print("Müşteri maili: ");
 						String email = scan.nextLine();
+
+						for(Musteri mevcutMusteri : yonetici.tumMusterileriListele()) {
+							if(mevcutMusteri.getEmail().equalsIgnoreCase(email)) {
+								throw new BarinakIstisnasi(email+" mailine sahip musteri bulunmakta!");
+							}
+						}
 
 						System.out.print("Müşteri şifresi: ");
 						String password = scan.nextLine();
@@ -207,34 +246,68 @@ public class Main2 {
 						System.out.print("Müşterinin müşteri ID numarası: ");
 						String customerId = scan.nextLine();
 
+						for(Musteri mevcutMusteri : yonetici.tumMusterileriListele()) {
+							if(mevcutMusteri.getCustomerId().equalsIgnoreCase(customerId)) {
+								throw new BarinakIstisnasi(customerId+" ID numarasına sahip musteri bulunmakta!");
+							}
+						}
+
 						System.out.print("Müşteri adresi: ");
 						String address = scan.nextLine();
 
 						System.out.print("Müşteri telefon numarası: ");
 						String phone = scan.nextLine();
 
+						for(Musteri mevcutMusteri : yonetici.tumMusterileriListele()) {
+							if(mevcutMusteri.getPhone().equalsIgnoreCase(phone)) {
+								throw new BarinakIstisnasi(phone+" telefon numarasına sahip musteri bulunmakta!");
+							}
+						}
+
 						Musteri yeniKayit = new Musteri(id, isim, email, password, customerId, address, phone);
 						yonetici.musteriEkle(yeniKayit);
-						break;
+						break; }
 
-					case 4:
+					case 4: {
 						System.out.println("Yeni çalışan kaydı");
 
-						System.out.print("Çalışan Id numarası: ");
-						id = scan.nextInt();
+						System.out.print("Çalışan TC numarası: ");
+						int id = scan.nextInt();
 						scan.nextLine();
 
+						for(Calisan mevcutCalisan : yonetici.tumCalisanlariListele()) {
+							if(mevcutCalisan.getId() == id) {
+								throw new BarinakIstisnasi(id+" id numaralı çalışan var!");
+							}
+						}
+
 						System.out.print("Çalışan ismi: ");
-						isim = scan.nextLine();
+						String isim = scan.nextLine();
+
+						if (isim == null || isim.trim().isEmpty()) {
+						    throw new IllegalArgumentException("Çalışan ismi boş bırakılamaz!");
+						}
 
 						System.out.print("Çalışan maili: ");
-						email = scan.nextLine();
+						String email = scan.nextLine();
+
+						for(Calisan mevcutCalisan : yonetici.tumCalisanlariListele()) {
+							if(mevcutCalisan.getEmail().equalsIgnoreCase(email)) {
+								throw new BarinakIstisnasi(email+" mailine sahip çalışan bulunmakta!");
+							}
+						}
 
 						System.out.print("Çalışan şifresi: ");
-						password = scan.nextLine();
+						String password = scan.nextLine();
 
 						System.out.print("Çalışanın çalışan Id numarası: ");
 						String employeeId = scan.nextLine();
+
+						for(Calisan mevcutCalisan : yonetici.tumCalisanlariListele()) {
+							if(mevcutCalisan.getEmployeeId().equalsIgnoreCase(employeeId)) {
+								throw new BarinakIstisnasi(employeeId+" ID numarasına sahip çalısan bulunmakta!");
+							}
+						}
 
 						System.out.print("Çalışanın rolü: ");
 						String role = scan.nextLine();
@@ -244,15 +317,15 @@ public class Main2 {
 
 						Calisan yeniCalisan = new Calisan(id, isim, email, password, employeeId, role, shift);
 						yonetici.calisanEkle(yeniCalisan);
-						break;
+						break; }
 
-					case 5:
+					case 5: {
 						yonetici.durumRaporuYazdir();
-						break;
+						break; }
 
-					default:
+					default: {
 						System.out.println("Hatalı tuşlama yaptınız.");
-						break;
+						break; }
 				}
 
 			} catch (InputMismatchException e) {

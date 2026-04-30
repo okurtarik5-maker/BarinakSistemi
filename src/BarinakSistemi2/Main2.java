@@ -1,9 +1,8 @@
 package BarinakSistemi2;
 
 import java.util.Date;
-import java.util.Scanner;
 import java.util.InputMismatchException;
-import java.util.List;
+import java.util.Scanner;
 
 public class Main2 {
 	public static void main(String args[]) {

@@ -10,10 +10,10 @@ import java.util.stream.Collectors;
  */
 public class BarinakYoneticisi {
 
-    private List<Hayvan> hayvanlar;
-    private List<Calisan> calisanlar;
-    private List<Musteri> musteriler;
-    private List<SahiplenmeBasvurusu> basvurular;
+    private List<Hayvan>               hayvanlar;
+    private List<Calisan>              calisanlar;
+    private List<Musteri>              musteriler;
+    private List<SahiplenmeBasvurusu>  basvurular;
 
     // ── Singleton ────────────────────────────────────────────────────────────────
 
@@ -27,26 +27,22 @@ public class BarinakYoneticisi {
     }
 
     private BarinakYoneticisi() {
-        // Sistem açılır açılmaz veritabanındaki kayıtlar listelere doldurulur
-        this.hayvanlar = VeritabaniIslemleri.hayvanlariGetir();
+        this.hayvanlar  = VeritabaniIslemleri.hayvanlariGetir();
         this.calisanlar = VeritabaniIslemleri.calisanlariGetir();
         this.musteriler = VeritabaniIslemleri.musterileriGetir();
-
-        // Başvurular için veritabanı tablosu yapmadığımızdan boş başlatıyoruz
-        this.basvurular = new ArrayList<>();
+        // Başvurular artık DB'den yükleniyor (sistem kapansa bile kaybolmaz)
+        this.basvurular = VeritabaniIslemleri.basvurulariGetir(musteriler, hayvanlar);
     }
 
     // ── Hayvan Yönetimi ──────────────────────────────────────────────────────────
 
-    public void hayvanEkle(Hayvan hayvan) {
+    public void hayvanEkle(Hayvan hayvan) throws BarinakIstisnasi {
         if (hayvan == null) {
-            System.out.println("Hata: Eklenecek hayvan null olamaz.");
-            return;
+            throw new BarinakIstisnasi("Eklenecek hayvan null olamaz.");
         }
         for (Hayvan h : hayvanlar) {
             if (h.getAnimalId() == hayvan.getAnimalId()) {
-                System.out.println("Hata: #" + hayvan.getAnimalId() + " ID'li hayvan zaten kayıtlı.");
-                return;
+                throw new BarinakIstisnasi("#" + hayvan.getAnimalId() + " ID'li hayvan zaten kayıtlı.");
             }
         }
         hayvanlar.add(hayvan);
@@ -73,83 +69,128 @@ public class BarinakYoneticisi {
         return sonuc;
     }
 
-    public Hayvan hayvanBul(int animalId) {
+    public Hayvan hayvanBul(int animalId) throws BarinakIstisnasi {
         for (Hayvan h : hayvanlar) {
             if (h.getAnimalId() == animalId) {
                 return h;
             }
         }
-        System.out.println("Uyarı: #" + animalId + " ID'li hayvan bulunamadı.");
-        return null;
+        throw new BarinakIstisnasi("#" + animalId + " ID'li hayvan bulunamadı.");
     }
 
     // ── Başvuru Yönetimi ─────────────────────────────────────────────────────────
 
-    public void basvuruKaydet(SahiplenmeBasvurusu basvuru) {
+    /**
+     * Yeni başvuru kaydeder.
+     * Aynı hayvana BEKLEMEDE durumunda bir başvuru varsa tekrar başvuru engellenir.
+     */
+    public void basvuruKaydet(SahiplenmeBasvurusu basvuru) throws BarinakIstisnasi {
         if (basvuru == null) {
-            System.out.println("Hata: Başvuru null olamaz.");
-            return;
+            throw new BarinakIstisnasi("Başvuru null olamaz.");
         }
+
+        // Aynı hayvana zaten BEKLEMEDE durumunda başvuru var mı?
         for (SahiplenmeBasvurusu b : basvurular) {
-            boolean ayniMusteri = b.getMusteri() != null
-                    && basvuru.getMusteri() != null
-                    && b.getMusteri().getCustomerId()
-                            .equals(basvuru.getMusteri().getCustomerId());
-            boolean ayniHayvan = b.getHayvan() != null
+            if (b.getHayvan() != null
                     && basvuru.getHayvan() != null
-                    && b.getHayvan().getAnimalId() == basvuru.getHayvan().getAnimalId();
-            if (ayniMusteri && ayniHayvan) {
-                System.out.println("Hata: Bu müşteri bu hayvana zaten başvurmuş.");
-                return;
+                    && b.getHayvan().getAnimalId() == basvuru.getHayvan().getAnimalId()
+                    && b.getDurum().equalsIgnoreCase("BEKLEMEDE")) {
+                throw new BarinakIstisnasi(
+                        basvuru.getHayvan().getName() + " isimli hayvan için zaten beklemede olan bir başvuru var!");
             }
         }
+
         basvurular.add(basvuru);
+        VeritabaniIslemleri.basvuruKaydet(basvuru);
         System.out.println("[KAYIT] Başvuru #" + basvuru.getAppId() + " sisteme eklendi.");
     }
 
     public List<SahiplenmeBasvurusu> bekleyenBasvurular() {
         return basvurular.stream()
-                .filter(b -> b.getDurum().equals("BEKLEMEDE"))
+                .filter(b -> b.getDurum().equalsIgnoreCase("BEKLEMEDE"))
                 .collect(Collectors.toList());
     }
 
-    public void basvuruOnayla(SahiplenmeBasvurusu basvuru, Calisan calisan) {
-        if (calisan == null) {
-            System.out.println("Hata: İşlemi yapacak çalışan belirtilmedi.");
-            return;
-        }
-        if (!calisan.getRole().equalsIgnoreCase("yönetici")
-                && !calisan.getRole().equalsIgnoreCase("yoneticisi")) {
-            System.out.println("Hata: " + calisan.getName() + " adlı çalışanın onaylama yetkisi yok.");
-            return;
-        }
-        basvuru.onayla();
+    public List<SahiplenmeBasvurusu> tumBasvurular() {
+        return new ArrayList<>(basvurular);
     }
 
-    public void basvuruReddet(SahiplenmeBasvurusu basvuru, Calisan calisan) {
+    /**
+     * Başvuruyu ID ile bulur.
+     */
+    public SahiplenmeBasvurusu basvuruBul(int appId) throws BarinakIstisnasi {
+        for (SahiplenmeBasvurusu b : basvurular) {
+            if (b.getAppId() == appId) {
+                return b;
+            }
+        }
+        throw new BarinakIstisnasi("#" + appId + " numaralı başvuru bulunamadı.");
+    }
+
+    /**
+     * Yetkili çalışan aracılığıyla başvuruyu onaylar.
+     * Onaylanan hayvan barınak listesinden ve veritabanından silinir.
+     */
+    public void basvuruOnayla(SahiplenmeBasvurusu basvuru, Calisan calisan) throws BarinakIstisnasi {
         if (calisan == null) {
-            System.out.println("Hata: İşlemi yapacak çalışan belirtilmedi.");
-            return;
+            throw new BarinakIstisnasi("İşlemi yapacak çalışan belirtilmedi.");
+        }
+        if (basvuru == null) {
+            throw new BarinakIstisnasi("Onaylanacak başvuru belirtilmedi.");
+        }
+        if (!basvuru.getDurum().equalsIgnoreCase("BEKLEMEDE")) {
+            throw new BarinakIstisnasi("Bu başvuru zaten işlenmiş. Durumu: " + basvuru.getDurum());
         }
         if (!calisan.getRole().equalsIgnoreCase("yönetici")
-                && !calisan.getRole().equalsIgnoreCase("yoneticisi")) {
-            System.out.println("Hata: " + calisan.getName() + " adlı çalışanın reddetme yetkisi yok.");
-            return;
+                && !calisan.getRole().equalsIgnoreCase("yonetici")) {
+            throw new BarinakIstisnasi(calisan.getName() + " adlı çalışanın onaylama yetkisi yok.");
         }
+
+        // Başvuru durumunu güncelle
+        basvuru.onayla();
+        VeritabaniIslemleri.basvuruDurumGuncelle(basvuru.getAppId(), "Onaylandı");
+
+        // Hayvanı barınaktan çıkar (liste + DB)
+        Hayvan sahiplenilenHayvan = basvuru.getHayvan();
+        if (sahiplenilenHayvan != null) {
+            hayvanlar.remove(sahiplenilenHayvan);
+            VeritabaniIslemleri.hayvanSil(sahiplenilenHayvan.getAnimalId());
+            System.out.println("[SİSTEM] " + sahiplenilenHayvan.getName()
+                    + " barınaktan çıkarıldı ve " + basvuru.getMusteri().getName() + " ile eşleştirildi.");
+        }
+    }
+
+    /**
+     * Yetkili çalışan aracılığıyla başvuruyu reddeder.
+     */
+    public void basvuruReddet(SahiplenmeBasvurusu basvuru, Calisan calisan) throws BarinakIstisnasi {
+        if (calisan == null) {
+            throw new BarinakIstisnasi("İşlemi yapacak çalışan belirtilmedi.");
+        }
+        if (basvuru == null) {
+            throw new BarinakIstisnasi("Reddedilecek başvuru belirtilmedi.");
+        }
+        if (!basvuru.getDurum().equalsIgnoreCase("BEKLEMEDE")) {
+            throw new BarinakIstisnasi("Bu başvuru zaten işlenmiş. Durumu: " + basvuru.getDurum());
+        }
+        if (!calisan.getRole().equalsIgnoreCase("yönetici")
+                && !calisan.getRole().equalsIgnoreCase("yonetici")) {
+            throw new BarinakIstisnasi(calisan.getName() + " adlı çalışanın reddetme yetkisi yok.");
+        }
+
         basvuru.reddet();
+        VeritabaniIslemleri.basvuruDurumGuncelle(basvuru.getAppId(), "Reddedildi");
     }
 
     // ── Çalışan Yönetimi ─────────────────────────────────────────────────────────
 
-    public void calisanEkle(Calisan calisan) {
+    public void calisanEkle(Calisan calisan) throws BarinakIstisnasi {
         if (calisan == null) {
-            System.out.println("Hata: Çalışan null olamaz.");
-            return;
+            throw new BarinakIstisnasi("Çalışan null olamaz.");
         }
         for (Calisan c : calisanlar) {
             if (c.getEmployeeId().equals(calisan.getEmployeeId())) {
-                System.out.println("Hata: " + calisan.getEmployeeId() + " ID'li çalışan zaten kayıtlı.");
-                return;
+                throw new BarinakIstisnasi(calisan.getEmployeeId() + " ID'li çalışan zaten kayıtlı.");
             }
         }
         calisanlar.add(calisan);
@@ -163,15 +204,13 @@ public class BarinakYoneticisi {
 
     // ── Müşteri Yönetimi ─────────────────────────────────────────────────────────
 
-    public void musteriEkle(Musteri musteri) {
+    public void musteriEkle(Musteri musteri) throws BarinakIstisnasi {
         if (musteri == null) {
-            System.out.println("Hata: Müşteri null olamaz.");
-            return;
+            throw new BarinakIstisnasi("Müşteri null olamaz.");
         }
         for (Musteri m : musteriler) {
             if (m.getCustomerId().equals(musteri.getCustomerId())) {
-                System.out.println("Hata: " + musteri.getCustomerId() + " ID'li müşteri zaten kayıtlı.");
-                return;
+                throw new BarinakIstisnasi(musteri.getCustomerId() + " ID'li müşteri zaten kayıtlı.");
             }
         }
         musteriler.add(musteri);
@@ -197,33 +236,8 @@ public class BarinakYoneticisi {
 
     // ── Getters ──────────────────────────────────────────────────────────────────
 
-    public List<Hayvan> getHayvanlar() {
-        return new ArrayList<>(hayvanlar);
-    }
-
-    public List<Calisan> getCalisanlar() {
-        return new ArrayList<>(calisanlar);
-    }
-
-    public List<Musteri> getMusteriler() {
-        return new ArrayList<>(musteriler);
-    }
-
-    public List<SahiplenmeBasvurusu> getBasvurular() {
-        return new ArrayList<>(basvurular);
-    }
-
-    public void musteriListeme() {
-
-        System.out.println("Müşteriler listeleniyor");
-
-        if (musteriler.isEmpty()) {
-            System.out.println("Kayıtlı müşteri yok");
-        } else {
-            for (Musteri m : musteriler) {
-                System.out.printf("Id: %d İsim: %s Mail: %s Çalışan Id: %s Adres: %s Telefon numarası: %s\n", m.getId(),
-                        m.getName(), m.getEmail(), m.getCustomerId(), m.getAddress(), m.getPhone());
-            }
-        }
-    }
+    public List<Hayvan>              getHayvanlar()  { return new ArrayList<>(hayvanlar); }
+    public List<Calisan>             getCalisanlar() { return new ArrayList<>(calisanlar); }
+    public List<Musteri>             getMusteriler() { return new ArrayList<>(musteriler); }
+    public List<SahiplenmeBasvurusu> getBasvurular() { return new ArrayList<>(basvurular); }
 }

@@ -8,29 +8,21 @@ import java.awt.event.*;
 import java.util.Date;
 import java.util.List;
 
-/**
- * Akıllı Barınak Sistemi - Java Swing Arayüzü Mevcut BarinakYoneticisi ve
- * VeritabaniIslemleri ile doğrudan çalışır.
- *
- * NetBeans'te kullanım: 1) Bu dosyayı BarinakSistemi3 paketine ekleyin. 2)
- * sqlite-jdbc JAR'ı projenin Libraries kısmına ekleyin. 3) main() metodunu
- * çalıştırın.
- */
+
 public class BarinakGUI extends JFrame {
 
-    // ── Renkler ──────────────────────────────────────────────────────────────────
-    // ── Renkler (Yeni Derin Palet ve Eksikler Tamamlandı) ─────────────────────────
-    private static final Color BG_DARK = new Color(18, 18, 24);    // Ana arka plan
-    private static final Color BG_PANEL = new Color(28, 28, 36);    // Kartlar/Paneller
-    private static final Color BG_CARD = new Color(35, 35, 45);    // Giriş alanları
-    private static final Color ACCENT_BLUE = new Color(88, 166, 255);  // Parlak mavi
-    private static final Color ACCENT_GREEN = new Color(46, 160, 67);   // Başarı yeşili
-    private static final Color ACCENT_RED = new Color(248, 81, 73);    // Hata/Red kırmızısı
-    private static final Color ACCENT_ORANGE = new Color(216, 141, 32);  // Uyarı turuncusu
-    private static final Color TEXT_PRIMARY = new Color(240, 246, 252); // Ana metin
-    private static final Color TEXT_SECONDARY = new Color(139, 148, 158); // Yardımcı metin (Yeni)
-    private static final Color TEXT_MUTED = new Color(110, 118, 129); // Eski TEXT_MUTED yerine
-    private static final Color BORDER_COLOR = new Color(48, 54, 61);    // Kenarlık rengi
+    // ── Renkler ──────────────────────────────────────────────────────────────────────────────────────────
+    private static final Color BG_DARK = new Color(18, 18, 24);    
+    private static final Color BG_PANEL = new Color(28, 28, 36);   
+    private static final Color BG_CARD = new Color(35, 35, 45);    
+    private static final Color ACCENT_BLUE = new Color(88, 166, 255);  
+    private static final Color ACCENT_GREEN = new Color(46, 160, 67);   
+    private static final Color ACCENT_RED = new Color(248, 81, 73);    
+    private static final Color ACCENT_ORANGE = new Color(216, 141, 32);  
+    private static final Color TEXT_PRIMARY = new Color(240, 246, 252); 
+    private static final Color TEXT_SECONDARY = new Color(139, 148, 158); 
+    private static final Color TEXT_MUTED = new Color(110, 118, 129); 
+    private static final Color BORDER_COLOR = new Color(48, 54, 61);    
 
     private BarinakYoneticisi yonetici;
     private JTabbedPane tabPane;
@@ -134,9 +126,7 @@ public class BarinakGUI extends JFrame {
         return bar;
     }
 
-    // ── Hayvanlar Sekmesi ─────────────────────────────────────────────────────────
-    // ── Hayvanlar Sekmesi ─────────────────────────────────────────────────────────
-    // ── Hayvanlar Sekmesi ─────────────────────────────────────────────────────────
+        // ── Hayvanlar Sekmesi ─────────────────────────────────────────────────────────
     private JPanel buildHayvanlarPanel() {
         JPanel panel = darkPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
@@ -165,7 +155,6 @@ public class BarinakGUI extends JFrame {
             btnRow.add(ekleBtn);
         }
 
-        // YENİ: Sağlık Kayıtları Butonu Herkese Açık (Yönetici, Veteriner, Bakıcı, Müşteri)
         JButton saglikBtn = styledButton("🩺  Sağlık Kayıtları", ACCENT_ORANGE);
         saglikBtn.addActionListener(e -> showSaglikKayitlariDialog());
         btnRow.add(saglikBtn);
@@ -233,7 +222,6 @@ public class BarinakGUI extends JFrame {
                     yeni = new Kedi(animalId, ad, tur, yas, saglik, irk);
                 }
 
-                // YENİ GÜNCELLEME: Yonetici sinifi yetki kontrolu yapiyor
                 yonetici.hayvanEkle(yeni, seciliCalisan);
 
                 refreshHayvanTable();
@@ -275,7 +263,6 @@ public class BarinakGUI extends JFrame {
 
         JPanel btnRow = darkPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
 
-        // YETKİ KONTROLÜ: Sadece Yönetici müşteri ekleyebilir
         if (girisYapanCalisan instanceof Yonetici) {
             JButton ekleBtn = styledButton("➕  Müşteri Ekle", ACCENT_GREEN);
             ekleBtn.addActionListener(e -> showMusteriEkleDialog());
@@ -380,7 +367,7 @@ public class BarinakGUI extends JFrame {
         }, BorderLayout.CENTER);
 
         JPanel btnRow = darkPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        // YETKİ KONTROLÜ: Sadece Yönetici çalışan ekleyebilir
+
         if (girisYapanCalisan instanceof Yonetici) {
             JButton ekleBtn = styledButton("➕  Çalışan Ekle", ACCENT_GREEN);
             ekleBtn.addActionListener(e -> showCalisanEkleDialog());
@@ -415,7 +402,7 @@ public class BarinakGUI extends JFrame {
         JComboBox<String> rolBox = styledCombo(roller);
 
         JTextField vardiyaF = styledField();
-        JTextField extraInfoF = styledField(); // Uzmanlık veya Bölge için
+        JTextField extraInfoF = styledField(); 
 
         addFormRow(form, "TC Kimlik No:", tcF);
         addFormRow(form, "Ad Soyad:", adF);
@@ -485,7 +472,6 @@ public class BarinakGUI extends JFrame {
     }
 
     // ── Başvurular Sekmesi ────────────────────────────────────────────────────────
-    // ── Başvurular Sekmesi ────────────────────────────────────────────────────────
     private JPanel buildBasvurularPanel() {
         JPanel panel = darkPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
@@ -510,7 +496,6 @@ public class BarinakGUI extends JFrame {
         yeniBasvuruBtn.addActionListener(e -> showYeniBasvuruDialog());
         btnRow.add(yeniBasvuruBtn);
 
-        // YETKİ KONTROLÜ: Başvuru Onaylama/Reddetme işlemlerini SADECE Yönetici görebilir
         if (girisYapanCalisan instanceof Yonetici) {
             JButton onaylaBtn = styledButton("✔  Onayla", ACCENT_GREEN);
             JButton reddetBtn = styledButton("✘  Reddet", ACCENT_RED);
@@ -534,7 +519,6 @@ public class BarinakGUI extends JFrame {
         panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
         String[] cols = {"Başvuru No", "Hayvan", "Durum", "Tarih"};
-        // Artık yukarıdaki genel değişkeni kullanıyor
         musteriBasvuruModel = new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int r, int c) {
                 return false;
@@ -621,7 +605,6 @@ public class BarinakGUI extends JFrame {
                 seciliMusteri.basvuruYap();
                 yonetici.basvuruKaydet(basvuru);
                 
-                // DEĞİŞEN KISIM BURASI: Çalışanların değil, herkesin ekranını yenile!
                 refreshAllTables(); 
                 
                 setStatus("✅  Başvuru #" + yeniId + " oluşturuldu.");
@@ -707,7 +690,6 @@ public class BarinakGUI extends JFrame {
     }
 
     // ── Tablo Yenileme ────────────────────────────────────────────────────────────
-    // ── Tablo Yenileme ────────────────────────────────────────────────────────────
     private void refreshAllTables() {
         refreshHayvanTable();
         refreshMusteriTable();
@@ -730,7 +712,6 @@ public class BarinakGUI extends JFrame {
     }
 
     private void refreshHayvanTable() {
-        // Eğer tablo modeli oluşturulmadıysa (Müşteri girişiyse) işlemi atla
         if (hayvanModel == null) {
             return;
         }
@@ -747,7 +728,6 @@ public class BarinakGUI extends JFrame {
     }
 
     private void refreshMusteriTable() {
-        // Eğer tablo modeli oluşturulmadıysa işlemi atla
         if (musteriModel == null) {
             return;
         }
@@ -762,7 +742,6 @@ public class BarinakGUI extends JFrame {
     }
 
     private void refreshCalisanTable() {
-        // Eğer tablo modeli oluşturulmadıysa işlemi atla
         if (calisanModel == null) {
             return;
         }
@@ -777,7 +756,6 @@ public class BarinakGUI extends JFrame {
     }
 
     private void refreshBasvuruTable() {
-        // Eğer tablo modeli oluşturulmadıysa işlemi atla
         if (basvuruModel == null) {
             return;
         }
@@ -826,8 +804,6 @@ public class BarinakGUI extends JFrame {
         p.add(v);
     }
 
-    // ── TC Doğrulama (UI versiyonu) ──────────────────────────────────────────────
-    // ── TC Doğrulama (Statik yapıldı) ────────────────────────────────────────────
     private static void tcDogrulaUI(long id) throws BarinakIstisnasi {
         String s = String.valueOf(Math.abs(id));
         if (s.length() != 11) {
@@ -846,7 +822,6 @@ public class BarinakGUI extends JFrame {
         }
     }
 
-    // ── UI Yardımcıları (Kayıt ekranında kullanılabilmesi için statik yapıldı) ────
     private static JPanel darkPanel(LayoutManager layout) {
         JPanel p = new JPanel(layout);
         p.setBackground(BG_DARK);
@@ -916,8 +891,7 @@ public class BarinakGUI extends JFrame {
         return b;
     }
 
-    // CancelButton, StyledTable ve Dialog instance kalsın, onlar sadece içeride kullanılıyor.
-    private JButton cancelButton(JDialog dlg) {
+    private static JButton cancelButton(JDialog dlg) {
         JButton b = styledButton("İptal", new Color(80, 85, 105));
         b.addActionListener(e -> dlg.dispose());
         return b;
@@ -968,7 +942,7 @@ public class BarinakGUI extends JFrame {
             setBackground(sel ? ACCENT_BLUE.darker() : BG_CARD);
 
             String s = val != null ? val.toString() : "";
-            setText(s); // METNİ BURADA AÇIKÇA SET EDİYORUZ (Görünmeme sorununu çözer)
+            setText(s); 
 
             if (s.equalsIgnoreCase("BEKLEMEDE")) {
                 setForeground(ACCENT_ORANGE);
@@ -987,14 +961,14 @@ public class BarinakGUI extends JFrame {
     private static void showLoginDialog() {
         JDialog dlg = new JDialog();
         dlg.setTitle("🐾 Akıllı Barınak Sistemi - Giriş");
-        dlg.setSize(400, 360); // Butonlar sığsın diye biraz uzattık
+        dlg.setSize(400, 360); 
         dlg.setLocationRelativeTo(null);
         dlg.setModal(true);
         dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dlg.getContentPane().setBackground(BG_DARK);
         dlg.setLayout(new BorderLayout(0, 0));
 
-        // Başlık
+        
         JLabel baslik = new JLabel("🐾  Barınak Sistemi", SwingConstants.CENTER);
         baslik.setFont(new Font("Segoe UI", Font.BOLD, 20));
         baslik.setForeground(TEXT_PRIMARY);
@@ -1003,7 +977,7 @@ public class BarinakGUI extends JFrame {
         baslik.setOpaque(true);
         dlg.add(baslik, BorderLayout.NORTH);
 
-        // Form
+        
         JPanel form = new JPanel(new GridLayout(3, 2, 8, 12));
         form.setBackground(BG_PANEL);
         form.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
@@ -1039,7 +1013,6 @@ public class BarinakGUI extends JFrame {
         form.add(turBox);
         dlg.add(form, BorderLayout.CENTER);
 
-        // Butonlar
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         btnPanel.setBackground(BG_DARK);
 
@@ -1049,10 +1022,10 @@ public class BarinakGUI extends JFrame {
 
         cikisBtn.addActionListener(e -> System.exit(0));
 
-        // KAYIT OL BUTONU İŞLEMİ
+       
         kayitBtn.addActionListener(e -> showKayitSecimDialog(dlg));
 
-        // GİRİŞ YAP BUTONU İŞLEMİ
+        
         girisBtn.addActionListener(e -> {
             try {
                 long tc = Long.parseLong(tcF.getText().trim());
@@ -1336,17 +1309,20 @@ public class BarinakGUI extends JFrame {
         }, BorderLayout.CENTER);
 
         JPanel bottom = darkPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton yeniKayitBtn = styledButton("➕ Yeni Kayıt Ekle", ACCENT_GREEN);
-        yeniKayitBtn.addActionListener(e -> showYeniSaglikKaydiDialog(seciliHayvan, skModel));
+        
+        if (girisYapanCalisan instanceof Veteriner) {
+            JButton yeniKayitBtn = styledButton("➕ Yeni Kayıt Ekle", ACCENT_GREEN);
+            yeniKayitBtn.addActionListener(e -> showYeniSaglikKaydiDialog(seciliHayvan, skModel));
+            bottom.add(yeniKayitBtn);
+        }
 
         JButton kapatBtn = styledButton("Kapat", new Color(80, 85, 105));
         kapatBtn.addActionListener(e -> dlg.dispose());
 
-        bottom.add(yeniKayitBtn);
         bottom.add(kapatBtn);
         dlg.add(bottom, BorderLayout.SOUTH);
 
-        dlg.setVisible(true);
+        dlg.setVisible(true);;
     }
 
     private void showYeniSaglikKaydiDialog(Hayvan hayvan, DefaultTableModel skModel) {

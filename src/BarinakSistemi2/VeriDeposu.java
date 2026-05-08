@@ -11,7 +11,7 @@ public class VeriDeposu<T> {
         this.kayitlar = new ArrayList<>();
     }
 
-    // Listeye yeni bir öğe ekler.
+    // Listeye yeni bir öğe ekler
     public void ekle(T oge) {
         kayitlar.add(oge);
     }

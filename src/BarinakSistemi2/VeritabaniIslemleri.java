@@ -134,7 +134,7 @@ public class VeritabaniIslemleri {
         String sql = "SELECT * FROM musteriler";
         try (Connection conn = baglan(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                Musteri m = new Musteri(rs.getInt("id"), rs.getString("name"),
+                Musteri m = new Musteri(rs.getLong("id"), rs.getString("name"), 
                         rs.getString("email"), rs.getString("password"),
                         rs.getString("customerId"), rs.getString("address"), rs.getString("phone"));
                 liste.add(m);
@@ -168,7 +168,7 @@ public class VeritabaniIslemleri {
         String sql = "SELECT * FROM calisanlar";
         try (Connection conn = baglan(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                Calisan c = new Calisan(rs.getInt("id"), rs.getString("name"),
+                Calisan c = new Calisan(rs.getLong("id"), rs.getString("name"),
                         rs.getString("email"), rs.getString("password"),
                         rs.getString("employeeId"), rs.getString("role"), rs.getString("shift"));
                 liste.add(c);

@@ -1,12 +1,12 @@
 package BarinakSistemi2;
 
 public class Calisan extends Person {
-
+	
 	private String employeeId;
 	private String role;
 	private String shift;
-
-	public Calisan(int id, String name, String email, String password, String employeeId, String role, String shift) {
+	
+	public Calisan(long id, String name, String email, String password, String employeeId, String role, String shift) {
 		super(id, name, email, password);
 		this.employeeId = employeeId;
 		this.role = role;
@@ -45,15 +45,15 @@ public class Calisan extends Person {
 				"Kişinin rolü: "+role+
 				"Vardiya: "+shift;
 	}
-
+	
 	public void hayvanEkle() {
 		System.out.println(getName() + " sisteme yeni bir hayvan ekledi.");
 	}
-
+	
 	public void saglikGuncelle() {
 		System.out.println("Hayvan sağlık durumu güncellendi.");
 	}
-
+	
 	public void basvuruOnayla() {
 		System.out.println("Sahiplenme başvurusu onaylandı.");
 	}

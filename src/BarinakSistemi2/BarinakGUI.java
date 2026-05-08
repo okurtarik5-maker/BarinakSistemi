@@ -1,0 +1,1415 @@
+package BarinakSistemi2;
+
+import javax.swing.*;
+import javax.swing.border.*;
+import javax.swing.table.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.Date;
+import java.util.List;
+
+/**
+ * Akıllı Barınak Sistemi - Java Swing Arayüzü Mevcut BarinakYoneticisi ve
+ * VeritabaniIslemleri ile doğrudan çalışır.
+ *
+ * NetBeans'te kullanım: 1) Bu dosyayı BarinakSistemi3 paketine ekleyin. 2)
+ * sqlite-jdbc JAR'ı projenin Libraries kısmına ekleyin. 3) main() metodunu
+ * çalıştırın.
+ */
+public class BarinakGUI extends JFrame {
+
+    // ── Renkler ──────────────────────────────────────────────────────────────────
+    // ── Renkler (Yeni Derin Palet ve Eksikler Tamamlandı) ─────────────────────────
+    private static final Color BG_DARK = new Color(18, 18, 24);    // Ana arka plan
+    private static final Color BG_PANEL = new Color(28, 28, 36);    // Kartlar/Paneller
+    private static final Color BG_CARD = new Color(35, 35, 45);    // Giriş alanları
+    private static final Color ACCENT_BLUE = new Color(88, 166, 255);  // Parlak mavi
+    private static final Color ACCENT_GREEN = new Color(46, 160, 67);   // Başarı yeşili
+    private static final Color ACCENT_RED = new Color(248, 81, 73);    // Hata/Red kırmızısı
+    private static final Color ACCENT_ORANGE = new Color(216, 141, 32);  // Uyarı turuncusu
+    private static final Color TEXT_PRIMARY = new Color(240, 246, 252); // Ana metin
+    private static final Color TEXT_SECONDARY = new Color(139, 148, 158); // Yardımcı metin (Yeni)
+    private static final Color TEXT_MUTED = new Color(110, 118, 129); // Eski TEXT_MUTED yerine
+    private static final Color BORDER_COLOR = new Color(48, 54, 61);    // Kenarlık rengi
+
+    private BarinakYoneticisi yonetici;
+    private JTabbedPane tabPane;
+
+ 
+   // Tablolar
+    private JTable hayvanTable, musteriTable, calisanTable, basvuruTable, musteriBasvuruTable;
+    private DefaultTableModel hayvanModel, musteriModel, calisanModel, basvuruModel, musteriBasvuruModel;
+
+    // Durum bar
+    private JLabel statusLabel;
+
+    private Calisan girisYapanCalisan;
+    private Musteri girisYapanMusteri;
+
+    public BarinakGUI(Calisan calisan, Musteri musteri) {
+        this.girisYapanCalisan = calisan;
+        this.girisYapanMusteri = musteri;
+
+        VeritabaniIslemleri.tablolariOlustur();
+        yonetici = BarinakYoneticisi.getInstance();
+
+        setTitle("🐾 Akıllı Barınak Sistemi");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1100, 720);
+        setMinimumSize(new Dimension(900, 600));
+        setLocationRelativeTo(null);
+        getContentPane().setBackground(BG_DARK);
+
+        initComponents();
+        refreshAllTables();
+    }
+
+    // ── Bileşen Kurulumu ─────────────────────────────────────────────────────────
+    private void initComponents() {
+        setLayout(new BorderLayout(0, 0));
+
+        // Üst başlık
+        add(buildHeader(), BorderLayout.NORTH);
+
+        // Sekme paneli
+        tabPane = buildTabPane();
+        add(tabPane, BorderLayout.CENTER);
+
+        // Durum çubuğu
+        add(buildStatusBar(), BorderLayout.SOUTH);
+    }
+
+    private JPanel buildHeader() {
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(BG_PANEL);
+        header.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_COLOR));
+        header.setPreferredSize(new Dimension(0, 60));
+
+        JLabel logo = new JLabel("  🐾  Akıllı Barınak Yönetim Sistemi");
+        logo.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        logo.setForeground(TEXT_PRIMARY);
+        header.add(logo, BorderLayout.WEST);
+
+        JButton raporBtn = styledButton("📊 Durum Raporu", ACCENT_BLUE);
+        raporBtn.addActionListener(e -> showDurumRaporu());
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        right.setBackground(BG_PANEL);
+        right.add(raporBtn);
+        header.add(right, BorderLayout.EAST);
+
+        return header;
+    }
+
+    private JTabbedPane buildTabPane() {
+        JTabbedPane tp = new JTabbedPane(JTabbedPane.TOP);
+        tp.setBackground(BG_DARK);
+        tp.setForeground(TEXT_PRIMARY);
+        tp.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        tp.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+        if (girisYapanCalisan != null) {
+            // Çalışan girişi — tüm sekmeler
+            tp.addTab("🐶  Hayvanlar", buildHayvanlarPanel());
+            tp.addTab("👥  Müşteriler", buildMusterilerPanel());
+            tp.addTab("👷  Çalışanlar", buildCalisanlarPanel());
+            tp.addTab("📋  Başvurular", buildBasvurularPanel());
+        } else {
+            // Müşteri girişi — hayvanlar ve kendi başvuruları
+            tp.addTab("🐶  Hayvanlar", buildHayvanlarPanel()); // Müşteriye eklendi
+            tp.addTab("📋  Başvurularım", buildMusteriBasvurularPanel());
+        }
+
+        return tp;
+    }
+
+    private JPanel buildStatusBar() {
+        JPanel bar = new JPanel(new BorderLayout());
+        bar.setBackground(new Color(25, 28, 38));
+        bar.setBorder(new MatteBorder(1, 0, 0, 0, BORDER_COLOR));
+        bar.setPreferredSize(new Dimension(0, 28));
+        statusLabel = new JLabel("  Sistem hazır.");
+        statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        statusLabel.setForeground(TEXT_MUTED);
+        bar.add(statusLabel, BorderLayout.WEST);
+        return bar;
+    }
+
+    // ── Hayvanlar Sekmesi ─────────────────────────────────────────────────────────
+    // ── Hayvanlar Sekmesi ─────────────────────────────────────────────────────────
+    // ── Hayvanlar Sekmesi ─────────────────────────────────────────────────────────
+    private JPanel buildHayvanlarPanel() {
+        JPanel panel = darkPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+
+        // Tablo
+        String[] cols = {"ID", "Ad", "Tür", "Yaş", "Irk", "Sağlık Durumu", "Durum"};
+        hayvanModel = new DefaultTableModel(cols, 0) {
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+        };
+        hayvanTable = styledTable(hayvanModel);
+        panel.add(new JScrollPane(hayvanTable) {
+            {
+                getViewport().setBackground(BG_CARD);
+            }
+        }, BorderLayout.CENTER);
+
+        // Butonlar
+        JPanel btnRow = darkPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+
+        // YETKİ KONTROLÜ: Sadece Yönetici Hayvan Ekleyebilir
+        if (girisYapanCalisan instanceof Yonetici) {
+            JButton ekleBtn = styledButton("➕  Hayvan Ekle", ACCENT_GREEN);
+            ekleBtn.addActionListener(e -> showHayvanEkleDialog());
+            btnRow.add(ekleBtn);
+        }
+
+        // YENİ: Sağlık Kayıtları Butonu Herkese Açık (Yönetici, Veteriner, Bakıcı, Müşteri)
+        JButton saglikBtn = styledButton("🩺  Sağlık Kayıtları", ACCENT_ORANGE);
+        saglikBtn.addActionListener(e -> showSaglikKayitlariDialog());
+        btnRow.add(saglikBtn);
+
+        JButton yenileBtn = styledButton("🔄  Yenile", ACCENT_BLUE);
+        yenileBtn.addActionListener(e -> refreshHayvanTable());
+        btnRow.add(yenileBtn);
+
+        panel.add(btnRow, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private void showHayvanEkleDialog() {
+        List<Calisan> calisanlar = yonetici.tumCalisanlariListele();
+        if (calisanlar.isEmpty()) {
+            showError("Önce bir çalışan ekleyin.");
+            return;
+        }
+
+        JDialog dlg = dialog("Hayvan Ekle", 420, 500);
+        JPanel form = formPanel();
+
+        // Çalışan seçimi
+        String[] calisanArr = calisanlar.stream()
+                .map(c -> c.getEmployeeId() + " - " + c.getName())
+                .toArray(String[]::new);
+        JComboBox<String> calisanBox = styledCombo(calisanArr);
+
+        // Tür
+        String[] turler = {"Köpek", "Kedi"};
+        JComboBox<String> turBox = styledCombo(turler);
+
+        JTextField idF = styledField();
+        JTextField adF = styledField();
+        JTextField yasF = styledField();
+        JTextField saglikF = styledField();
+        JTextField irkF = styledField();
+
+        addFormRow(form, "Çalışan:", calisanBox);
+        addFormRow(form, "Hayvan Tipi:", turBox);
+        addFormRow(form, "ID:", idF);
+        addFormRow(form, "Ad:", adF);
+        addFormRow(form, "Yaş:", yasF);
+        addFormRow(form, "Sağlık Durumu:", saglikF);
+        addFormRow(form, "Irk:", irkF);
+
+        JButton kaydetBtn = styledButton("Kaydet", ACCENT_GREEN);
+        kaydetBtn.addActionListener(e -> {
+            try {
+                int calisanIdx = calisanBox.getSelectedIndex();
+                Calisan seciliCalisan = calisanlar.get(calisanIdx);
+                int animalId = Integer.parseInt(idF.getText().trim());
+                String ad = adF.getText().trim();
+                int yas = Integer.parseInt(yasF.getText().trim());
+                String saglik = saglikF.getText().trim();
+                String irk = irkF.getText().trim();
+
+                String tur = turBox.getSelectedIndex() == 0 ? "Köpek" : "Kedi";
+
+                Hayvan yeni;
+                if (turBox.getSelectedIndex() == 0) {
+                    yeni = new Kopek(animalId, ad, tur, yas, saglik, irk);
+                } else {
+                    yeni = new Kedi(animalId, ad, tur, yas, saglik, irk);
+                }
+
+                // YENİ GÜNCELLEME: Yonetici sinifi yetki kontrolu yapiyor
+                yonetici.hayvanEkle(yeni, seciliCalisan);
+
+                refreshHayvanTable();
+                setStatus("✅  " + ad + " barınağa eklendi.");
+                dlg.dispose();
+            } catch (BarinakIstisnasi ex) {
+                showError(ex.getMessage());
+            } catch (NumberFormatException ex) {
+                showError("ID ve Yaş alanları sayısal olmalıdır.");
+            }
+        });
+
+        JPanel bottom = darkPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottom.add(kaydetBtn);
+        bottom.add(cancelButton(dlg));
+
+        dlg.add(form, BorderLayout.CENTER);
+        dlg.add(bottom, BorderLayout.SOUTH);
+        dlg.setVisible(true);
+    }
+
+    // ── Müşteriler Sekmesi ────────────────────────────────────────────────────────
+    private JPanel buildMusterilerPanel() {
+        JPanel panel = darkPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+
+        String[] cols = {"ID (TC)", "Ad", "E-posta", "Müşteri Kodu", "Adres", "Telefon"};
+        musteriModel = new DefaultTableModel(cols, 0) {
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+        };
+        musteriTable = styledTable(musteriModel);
+        panel.add(new JScrollPane(musteriTable) {
+            {
+                getViewport().setBackground(BG_CARD);
+            }
+        }, BorderLayout.CENTER);
+
+        JPanel btnRow = darkPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+
+        // YETKİ KONTROLÜ: Sadece Yönetici müşteri ekleyebilir
+        if (girisYapanCalisan instanceof Yonetici) {
+            JButton ekleBtn = styledButton("➕  Müşteri Ekle", ACCENT_GREEN);
+            ekleBtn.addActionListener(e -> showMusteriEkleDialog());
+            btnRow.add(ekleBtn);
+        }
+
+        JButton yenileBtn = styledButton("🔄  Yenile", ACCENT_BLUE);
+        yenileBtn.addActionListener(e -> refreshMusteriTable());
+        btnRow.add(yenileBtn);
+
+        panel.add(btnRow, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private void showMusteriEkleDialog() {
+        JDialog dlg = dialog("Müşteri Ekle", 400, 460);
+        JPanel form = formPanel();
+
+        JTextField tcF = styledField();
+        JTextField adF = styledField();
+        JTextField emailF = styledField();
+        JPasswordField sifreF = new JPasswordField();
+        sifreF.setBackground(BG_CARD);
+        sifreF.setForeground(TEXT_PRIMARY);
+        sifreF.setCaretColor(TEXT_PRIMARY);
+        sifreF.setBorder(fieldBorder());
+        JTextField kodF = styledField();
+        JTextField adresF = styledField();
+        JTextField telF = styledField();
+
+        addFormRow(form, "TC Kimlik No:", tcF);
+        addFormRow(form, "Ad Soyad:", adF);
+        addFormRow(form, "E-posta:", emailF);
+        addFormRow(form, "Şifre:", sifreF);
+        addFormRow(form, "Müşteri Kodu:", kodF);
+        addFormRow(form, "Adres:", adresF);
+        addFormRow(form, "Telefon (10-11):", telF);
+
+        JButton kaydetBtn = styledButton("Kaydet", ACCENT_GREEN);
+        kaydetBtn.addActionListener(e -> {
+            try {
+                long tc = Long.parseLong(tcF.getText().trim());
+                tcDogrulaUI(tc);
+
+                // Duplicate kontrol
+                for (Musteri m : yonetici.tumMusterileriListele()) {
+                    if (m.getId() == tc) {
+                        throw new BarinakIstisnasi(tc + " TC'ye sahip müşteri zaten kayıtlı.");
+                    }
+                }
+
+                String ad = adF.getText().trim();
+                String email = emailF.getText().trim();
+                String sifre = new String(sifreF.getPassword()).trim();
+                String kod = kodF.getText().trim();
+                String adres = adresF.getText().trim();
+                String tel = telF.getText().trim();
+
+                if (ad.isEmpty() || email.isEmpty() || sifre.isEmpty() || kod.isEmpty()) {
+                    throw new BarinakIstisnasi("Ad, e-posta, şifre ve müşteri kodu zorunludur.");
+                }
+                if (!tel.matches("^[0-9]{10,11}$")) {
+                    throw new BarinakIstisnasi("Telefon 10-11 haneli olmalıdır.");
+                }
+
+                yonetici.musteriEkle(new Musteri(tc, ad, email, sifre, kod, adres, tel));
+                refreshMusteriTable();
+                setStatus("✅  Müşteri " + ad + " eklendi.");
+                dlg.dispose();
+            } catch (BarinakIstisnasi ex) {
+                showError(ex.getMessage());
+            } catch (NumberFormatException ex) {
+                showError("TC Kimlik No sayısal olmalıdır.");
+            }
+        });
+
+        JPanel bottom = darkPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottom.add(kaydetBtn);
+        bottom.add(cancelButton(dlg));
+        dlg.add(form, BorderLayout.CENTER);
+        dlg.add(bottom, BorderLayout.SOUTH);
+        dlg.setVisible(true);
+    }
+
+    // ── Çalışanlar Sekmesi ────────────────────────────────────────────────────────
+    private JPanel buildCalisanlarPanel() {
+        JPanel panel = darkPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+
+        String[] cols = {"ID (TC)", "Ad", "E-posta", "Çalışan Kodu", "Rol", "Vardiya"};
+        calisanModel = new DefaultTableModel(cols, 0) {
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+        };
+        calisanTable = styledTable(calisanModel);
+        panel.add(new JScrollPane(calisanTable) {
+            {
+                getViewport().setBackground(BG_CARD);
+            }
+        }, BorderLayout.CENTER);
+
+        JPanel btnRow = darkPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        // YETKİ KONTROLÜ: Sadece Yönetici çalışan ekleyebilir
+        if (girisYapanCalisan instanceof Yonetici) {
+            JButton ekleBtn = styledButton("➕  Çalışan Ekle", ACCENT_GREEN);
+            ekleBtn.addActionListener(e -> showCalisanEkleDialog());
+            btnRow.add(ekleBtn);
+        }
+
+        JButton yenileBtn = styledButton("🔄  Yenile", ACCENT_BLUE);
+        yenileBtn.addActionListener(e -> refreshCalisanTable());
+        btnRow.add(yenileBtn);
+
+        panel.add(btnRow, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private void showCalisanEkleDialog() {
+        JDialog dlg = dialog("Çalışan Ekle", 400, 480);
+        JPanel form = formPanel();
+
+        JTextField tcF = styledField();
+        JTextField adF = styledField();
+        JTextField emailF = styledField();
+        JPasswordField sifreF = new JPasswordField();
+        sifreF.setBackground(BG_CARD);
+        sifreF.setForeground(TEXT_PRIMARY);
+        sifreF.setCaretColor(TEXT_PRIMARY);
+        sifreF.setBorder(fieldBorder());
+        JTextField kodF = styledField();
+
+        // Rolleri Combobox ile seçtiriyoruz
+        String[] roller = {"Yönetici", "Veteriner", "Bakıcı"};
+        JComboBox<String> rolBox = styledCombo(roller);
+
+        JTextField vardiyaF = styledField();
+        JTextField extraInfoF = styledField(); // Uzmanlık veya Bölge için
+
+        addFormRow(form, "TC Kimlik No:", tcF);
+        addFormRow(form, "Ad Soyad:", adF);
+        addFormRow(form, "E-posta:", emailF);
+        addFormRow(form, "Şifre:", sifreF);
+        addFormRow(form, "Çalışan Kodu:", kodF);
+        addFormRow(form, "Rol Seçimi:", rolBox);
+        addFormRow(form, "Vardiya:", vardiyaF);
+        addFormRow(form, "Ek Bilgi (Uzmanlık/Bölge):", extraInfoF);
+
+        JButton kaydetBtn = styledButton("Kaydet", ACCENT_GREEN);
+        kaydetBtn.addActionListener(e -> {
+            try {
+                long tc = Long.parseLong(tcF.getText().trim());
+                tcDogrulaUI(tc);
+
+                for (Calisan c : yonetici.tumCalisanlariListele()) {
+                    if (c.getId() == tc) {
+                        throw new BarinakIstisnasi(tc + " TC'ye sahip çalışan zaten kayıtlı.");
+                    }
+                }
+
+                String ad = adF.getText().trim();
+                String email = emailF.getText().trim();
+                String sifre = new String(sifreF.getPassword()).trim();
+                String kod = kodF.getText().trim();
+                String vardiya = vardiyaF.getText().trim();
+                String extraInfo = extraInfoF.getText().trim();
+                int rolSecim = rolBox.getSelectedIndex();
+
+                if (ad.isEmpty() || email.isEmpty() || sifre.isEmpty() || kod.isEmpty()) {
+                    throw new BarinakIstisnasi("Ad, e-posta, şifre ve kod zorunludur.");
+                }
+
+                Calisan yeniCalisan;
+                if (rolSecim == 0) {
+                    yeniCalisan = new Yonetici(tc, ad, email, sifre, kod, vardiya);
+                } else if (rolSecim == 1) {
+                    if (extraInfo.isEmpty()) {
+                        throw new BarinakIstisnasi("Veteriner için uzmanlık alanı (Ek Bilgi) girmelisiniz.");
+                    }
+                    yeniCalisan = new Veteriner(tc, ad, email, sifre, kod, vardiya, extraInfo);
+                } else {
+                    if (extraInfo.isEmpty()) {
+                        throw new BarinakIstisnasi("Bakıcı için sorumlu bölge (Ek Bilgi) girmelisiniz.");
+                    }
+                    yeniCalisan = new Bakici(tc, ad, email, sifre, kod, vardiya, extraInfo);
+                }
+
+                yonetici.calisanEkle(yeniCalisan);
+                refreshCalisanTable();
+                setStatus("✅  Çalışan " + ad + " eklendi.");
+                dlg.dispose();
+            } catch (BarinakIstisnasi ex) {
+                showError(ex.getMessage());
+            } catch (NumberFormatException ex) {
+                showError("TC Kimlik No sayısal olmalıdır.");
+            }
+        });
+
+        JPanel bottom = darkPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottom.add(kaydetBtn);
+        bottom.add(cancelButton(dlg));
+        dlg.add(form, BorderLayout.CENTER);
+        dlg.add(bottom, BorderLayout.SOUTH);
+        dlg.setVisible(true);
+    }
+
+    // ── Başvurular Sekmesi ────────────────────────────────────────────────────────
+    // ── Başvurular Sekmesi ────────────────────────────────────────────────────────
+    private JPanel buildBasvurularPanel() {
+        JPanel panel = darkPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+
+        String[] cols = {"Başvuru No", "Müşteri", "Hayvan", "Durum", "Tarih"};
+        basvuruModel = new DefaultTableModel(cols, 0) {
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+        };
+        basvuruTable = styledTable(basvuruModel);
+        basvuruTable.getColumnModel().getColumn(3).setCellRenderer(new StatusCellRenderer());
+        panel.add(new JScrollPane(basvuruTable) {
+            {
+                getViewport().setBackground(BG_CARD);
+            }
+        }, BorderLayout.CENTER);
+
+        JPanel btnRow = darkPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+
+        JButton yeniBasvuruBtn = styledButton("➕  Yeni Başvuru", ACCENT_GREEN);
+        yeniBasvuruBtn.addActionListener(e -> showYeniBasvuruDialog());
+        btnRow.add(yeniBasvuruBtn);
+
+        // YETKİ KONTROLÜ: Başvuru Onaylama/Reddetme işlemlerini SADECE Yönetici görebilir
+        if (girisYapanCalisan instanceof Yonetici) {
+            JButton onaylaBtn = styledButton("✔  Onayla", ACCENT_GREEN);
+            JButton reddetBtn = styledButton("✘  Reddet", ACCENT_RED);
+            onaylaBtn.addActionListener(e -> basvuruIslem(true));
+            reddetBtn.addActionListener(e -> basvuruIslem(false));
+            btnRow.add(onaylaBtn);
+            btnRow.add(reddetBtn);
+        }
+
+        JButton yenileBtn = styledButton("🔄  Yenile", ACCENT_BLUE);
+        yenileBtn.addActionListener(e -> refreshBasvuruTable());
+        btnRow.add(yenileBtn);
+
+        panel.add(btnRow, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private JPanel buildMusteriBasvurularPanel() {
+        JPanel panel = darkPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+
+        String[] cols = {"Başvuru No", "Hayvan", "Durum", "Tarih"};
+        // Artık yukarıdaki genel değişkeni kullanıyor
+        musteriBasvuruModel = new DefaultTableModel(cols, 0) {
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+        };
+        musteriBasvuruTable = styledTable(musteriBasvuruModel);
+        musteriBasvuruTable.getColumnModel().getColumn(2).setCellRenderer(new StatusCellRenderer());
+        panel.add(new JScrollPane(musteriBasvuruTable) {
+            {
+                getViewport().setBackground(BG_CARD);
+            }
+        }, BorderLayout.CENTER);
+
+        JPanel btnRow = darkPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JButton yeniBtn = styledButton("➕  Yeni Başvuru", ACCENT_GREEN);
+        yeniBtn.addActionListener(e -> showYeniBasvuruDialog());
+        btnRow.add(yeniBtn);
+
+        // Müşteri için de Yenile Butonu
+        JButton yenileBtn = styledButton("🔄  Yenile", ACCENT_BLUE);
+        yenileBtn.addActionListener(e -> refreshMusteriBasvuruTable());
+        btnRow.add(yenileBtn);
+
+        panel.add(btnRow, BorderLayout.SOUTH);
+
+        // Tabloyu ilk açılışta doldur
+        refreshMusteriBasvuruTable();
+
+        return panel;
+    }
+
+    private void showYeniBasvuruDialog() {
+        List<Musteri> musteriler = yonetici.tumMusterileriListele();
+        List<Hayvan> hayvanlar = yonetici.tumHayvanlariListele();
+
+        if (musteriler.isEmpty()) {
+            showError("Sistemde kayıtlı müşteri yok.");
+            return;
+        }
+        if (hayvanlar.isEmpty()) {
+            showError("Barınakta sahiplenilebilecek hayvan yok.");
+            return;
+        }
+
+        JDialog dlg = dialog("Sahiplenme Başvurusu", 380, 280);
+        JPanel form = formPanel();
+
+        String[] mArr = musteriler.stream()
+                .map(m -> m.getName() + " (" + m.getCustomerId() + ")")
+                .toArray(String[]::new);
+        String[] hArr = hayvanlar.stream()
+                .map(h -> h.getName() + " | ID:" + h.getAnimalId() + " | " + h.getTur())
+                .toArray(String[]::new);
+
+        JComboBox<String> mBox = styledCombo(mArr);
+        JComboBox<String> hBox = styledCombo(hArr);
+        JPasswordField sifreF = new JPasswordField();
+        sifreF.setBackground(BG_CARD);
+        sifreF.setForeground(TEXT_PRIMARY);
+        sifreF.setCaretColor(TEXT_PRIMARY);
+        sifreF.setBorder(fieldBorder());
+
+        addFormRow(form, "Müşteri:", mBox);
+        addFormRow(form, "Hayvan:", hBox);
+        addFormRow(form, "Müşteri Şifresi:", sifreF);
+
+        JButton kaydetBtn = styledButton("Başvuru Yap", ACCENT_GREEN);
+        kaydetBtn.addActionListener(e -> {
+            try {
+                Musteri seciliMusteri = musteriler.get(mBox.getSelectedIndex());
+                Hayvan seciliHayvan = hayvanlar.get(hBox.getSelectedIndex());
+
+                // Şifre doğrulama
+                String girilenSifre = new String(sifreF.getPassword()).trim();
+                if (!seciliMusteri.getPassword().equals(girilenSifre)) {
+                    showError("Müşteri şifresi yanlış!");
+                    return;
+                }
+
+                int yeniId = VeritabaniIslemleri.sonBasvuruIdGetir() + 1;
+                SahiplenmeBasvurusu basvuru = new SahiplenmeBasvurusu(
+                        yeniId, "BEKLEMEDE", new Date(), seciliMusteri, seciliHayvan
+                );
+                seciliMusteri.basvuruYap();
+                yonetici.basvuruKaydet(basvuru);
+                
+                // DEĞİŞEN KISIM BURASI: Çalışanların değil, herkesin ekranını yenile!
+                refreshAllTables(); 
+                
+                setStatus("✅  Başvuru #" + yeniId + " oluşturuldu.");
+                dlg.dispose();
+            } catch (BarinakIstisnasi ex) {
+                showError(ex.getMessage());
+            }
+        });
+
+        JPanel bottom = darkPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottom.add(kaydetBtn);
+        bottom.add(cancelButton(dlg));
+        dlg.add(form, BorderLayout.CENTER);
+        dlg.add(bottom, BorderLayout.SOUTH);
+        dlg.setVisible(true);
+    }
+
+    private void basvuruIslem(boolean onayla) {
+        int row = basvuruTable.getSelectedRow();
+        if (row < 0) {
+            showError("Lütfen bir başvuru seçin.");
+            return;
+        }
+
+        int appId = (int) basvuruModel.getValueAt(row, 0);
+
+        List<Calisan> yoneticiListesi = yonetici.tumCalisanlariListele().stream()
+                .filter(c -> c.getRole().equalsIgnoreCase("yönetici") || c.getRole().equalsIgnoreCase("yonetici"))
+                .collect(java.util.stream.Collectors.toList());
+
+        if (yoneticiListesi.isEmpty()) {
+            showError("Sistemde yönetici rolüne sahip çalışan bulunamadı.");
+            return;
+        }
+
+        String[] yArr = yoneticiListesi.stream()
+                .map(c -> c.getName() + " (" + c.getEmployeeId() + ")")
+                .toArray(String[]::new);
+        String secim = (String) JOptionPane.showInputDialog(
+                this, "İşlemi yapacak yönetici:", "Yönetici Seç",
+                JOptionPane.PLAIN_MESSAGE, null, yArr, yArr[0]);
+        if (secim == null) {
+            return;
+        }
+
+        int yIdx = java.util.Arrays.asList(yArr).indexOf(secim);
+        Calisan yetkili = yoneticiListesi.get(yIdx);
+
+        // Çalışan şifre doğrulama
+        JPasswordField sifreF = new JPasswordField();
+        sifreF.setBackground(BG_CARD);
+        sifreF.setForeground(TEXT_PRIMARY);
+        sifreF.setCaretColor(TEXT_PRIMARY);
+        sifreF.setBorder(fieldBorder());
+
+        int result = JOptionPane.showConfirmDialog(
+                this, sifreF, yetkili.getName() + " şifresini girin:",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE
+        );
+        if (result != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String girilenSifre = new String(sifreF.getPassword()).trim();
+        if (!yetkili.getPassword().equals(girilenSifre)) {
+            showError("Çalışan şifresi yanlış!");
+            return;
+        }
+
+        try {
+            SahiplenmeBasvurusu hedef = yonetici.basvuruBul(appId);
+            if (onayla) {
+                yonetici.basvuruOnayla(hedef, yetkili);
+                setStatus("✅  Başvuru #" + appId + " onaylandı.");
+            } else {
+                yonetici.basvuruReddet(hedef, yetkili);
+                setStatus("❌  Başvuru #" + appId + " reddedildi.");
+            }
+            refreshAllTables();
+        } catch (BarinakIstisnasi ex) {
+            showError(ex.getMessage());
+        }
+    }
+
+    // ── Tablo Yenileme ────────────────────────────────────────────────────────────
+    // ── Tablo Yenileme ────────────────────────────────────────────────────────────
+    private void refreshAllTables() {
+        refreshHayvanTable();
+        refreshMusteriTable();
+        refreshCalisanTable();
+        refreshBasvuruTable();
+    }
+    private void refreshMusteriBasvuruTable() {
+        if (musteriBasvuruModel == null || girisYapanMusteri == null) {
+            return;
+        }
+        musteriBasvuruModel.setRowCount(0);
+        for (SahiplenmeBasvurusu b : yonetici.tumBasvurular()) {
+            if (b.getMusteri() != null && b.getMusteri().getId() == girisYapanMusteri.getId()) {
+                String hayvanAdi = b.getHayvan() != null ? b.getHayvan().getName() : "Sahiplenildi";
+                musteriBasvuruModel.addRow(new Object[]{
+                    b.getAppId(), hayvanAdi, b.getDurum(), b.getTarih()
+                });
+            }
+        }
+    }
+
+    private void refreshHayvanTable() {
+        // Eğer tablo modeli oluşturulmadıysa (Müşteri girişiyse) işlemi atla
+        if (hayvanModel == null) {
+            return;
+        }
+
+        hayvanModel.setRowCount(0);
+        for (Hayvan h : yonetici.tumHayvanlariListele()) {
+            String irk = (h instanceof Kedi) ? ((Kedi) h).getIrk()
+                    : (h instanceof Kopek) ? ((Kopek) h).getIrk() : "-";
+            hayvanModel.addRow(new Object[]{
+                h.getAnimalId(), h.getName(), h.getTur(),
+                h.getYas(), irk, h.getSaglikDurumu(), h.getDurum()
+            });
+        }
+    }
+
+    private void refreshMusteriTable() {
+        // Eğer tablo modeli oluşturulmadıysa işlemi atla
+        if (musteriModel == null) {
+            return;
+        }
+
+        musteriModel.setRowCount(0);
+        for (Musteri m : yonetici.tumMusterileriListele()) {
+            musteriModel.addRow(new Object[]{
+                m.getId(), m.getName(), m.getEmail(),
+                m.getCustomerId(), m.getAddress(), m.getPhone()
+            });
+        }
+    }
+
+    private void refreshCalisanTable() {
+        // Eğer tablo modeli oluşturulmadıysa işlemi atla
+        if (calisanModel == null) {
+            return;
+        }
+
+        calisanModel.setRowCount(0);
+        for (Calisan c : yonetici.tumCalisanlariListele()) {
+            calisanModel.addRow(new Object[]{
+                c.getId(), c.getName(), c.getEmail(),
+                c.getEmployeeId(), c.getRole(), c.getShift()
+            });
+        }
+    }
+
+    private void refreshBasvuruTable() {
+        // Eğer tablo modeli oluşturulmadıysa işlemi atla
+        if (basvuruModel == null) {
+            return;
+        }
+
+        basvuruModel.setRowCount(0);
+        for (SahiplenmeBasvurusu b : yonetici.tumBasvurular()) {
+            String musteriAdi = b.getMusteri() != null ? b.getMusteri().getName() : "?";
+            String hayvanAdi = b.getHayvan() != null ? b.getHayvan().getName() : "Sahiplenildi";
+            basvuruModel.addRow(new Object[]{
+                b.getAppId(), musteriAdi, hayvanAdi, b.getDurum(), b.getTarih()
+            });
+        }
+    }
+
+    // ── Durum Raporu ──────────────────────────────────────────────────────────────
+    private void showDurumRaporu() {
+        int hayvan = yonetici.tumHayvanlariListele().size();
+        int musteri = yonetici.tumMusterileriListele().size();
+        int calisan = yonetici.tumCalisanlariListele().size();
+        int basvuru = yonetici.tumBasvurular().size();
+        int bekleyen = yonetici.bekleyenBasvurular().size();
+
+        JDialog dlg = dialog("Durum Raporu", 340, 280);
+        JPanel p = darkPanel(new GridLayout(6, 2, 10, 10));
+        p.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        addRaporRow(p, "🐾  Toplam Hayvan", String.valueOf(hayvan));
+        addRaporRow(p, "👥  Kayıtlı Müşteri", String.valueOf(musteri));
+        addRaporRow(p, "👷  Aktif Çalışan", String.valueOf(calisan));
+        addRaporRow(p, "📋  Toplam Başvuru", String.valueOf(basvuru));
+        addRaporRow(p, "⏳  Bekleyen Başvuru", String.valueOf(bekleyen));
+        addRaporRow(p, "✅  İşlenen Başvuru", String.valueOf(basvuru - bekleyen));
+
+        dlg.add(p);
+        dlg.setVisible(true);
+    }
+
+    private void addRaporRow(JPanel p, String label, String value) {
+        JLabel l = new JLabel(label);
+        l.setForeground(TEXT_MUTED);
+        l.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        JLabel v = new JLabel(value);
+        v.setForeground(TEXT_PRIMARY);
+        v.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        p.add(l);
+        p.add(v);
+    }
+
+    // ── TC Doğrulama (UI versiyonu) ──────────────────────────────────────────────
+    // ── TC Doğrulama (Statik yapıldı) ────────────────────────────────────────────
+    private static void tcDogrulaUI(long id) throws BarinakIstisnasi {
+        String s = String.valueOf(Math.abs(id));
+        if (s.length() != 11) {
+            throw new BarinakIstisnasi("TC 11 haneli olmalıdır. Girilen: " + s.length() + " hane.");
+        }
+        int toplam = 0;
+        for (int i = 0; i < 10; i++) {
+            toplam += Character.getNumericValue(s.charAt(i));
+        }
+        int son = Character.getNumericValue(s.charAt(10));
+        if (son % 2 != 0) {
+            throw new BarinakIstisnasi("TC'nin son hanesi çift olmalıdır.");
+        }
+        if (toplam % 10 != son) {
+            throw new BarinakIstisnasi("Geçersiz TC Kimlik Numarası.");
+        }
+    }
+
+    // ── UI Yardımcıları (Kayıt ekranında kullanılabilmesi için statik yapıldı) ────
+    private static JPanel darkPanel(LayoutManager layout) {
+        JPanel p = new JPanel(layout);
+        p.setBackground(BG_DARK);
+        return p;
+    }
+
+    private static JPanel formPanel() {
+        JPanel p = new JPanel(new GridLayout(0, 2, 8, 8));
+        p.setBackground(BG_PANEL);
+        p.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        return p;
+    }
+
+    private static void addFormRow(JPanel form, String label, JComponent field) {
+        JLabel lbl = new JLabel(label);
+        lbl.setForeground(TEXT_MUTED);
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        form.add(lbl);
+        form.add(field);
+    }
+
+    private static JTextField styledField() {
+        JTextField f = new JTextField();
+        f.setBackground(BG_CARD);
+        f.setForeground(TEXT_PRIMARY);
+        f.setCaretColor(TEXT_PRIMARY);
+        f.setBorder(fieldBorder());
+        f.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        return f;
+    }
+
+    private static Border fieldBorder() {
+        return BorderFactory.createCompoundBorder(
+                new LineBorder(BORDER_COLOR, 1, true),
+                BorderFactory.createEmptyBorder(4, 6, 4, 6)
+        );
+    }
+
+    private static <E> JComboBox<E> styledCombo(E[] items) {
+        JComboBox<E> cb = new JComboBox<>(items);
+        cb.setBackground(BG_CARD);
+        cb.setForeground(TEXT_PRIMARY);
+        cb.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        return cb;
+    }
+
+    private static JButton styledButton(String text, Color bg) {
+        JButton b = new JButton(text);
+        b.setBackground(bg);
+        b.setForeground(Color.WHITE);
+        b.setFocusPainted(false);
+        b.setBorderPainted(false);
+        b.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.setBorder(BorderFactory.createEmptyBorder(7, 16, 7, 16));
+        b.addMouseListener(new MouseAdapter() {
+            Color orig = bg;
+
+            public void mouseEntered(MouseEvent e) {
+                b.setBackground(orig.brighter());
+            }
+
+            public void mouseExited(MouseEvent e) {
+                b.setBackground(orig);
+            }
+        });
+        return b;
+    }
+
+    // CancelButton, StyledTable ve Dialog instance kalsın, onlar sadece içeride kullanılıyor.
+    private JButton cancelButton(JDialog dlg) {
+        JButton b = styledButton("İptal", new Color(80, 85, 105));
+        b.addActionListener(e -> dlg.dispose());
+        return b;
+    }
+
+    private JTable styledTable(DefaultTableModel model) {
+        JTable t = new JTable(model);
+        t.setBackground(BG_CARD);
+        t.setForeground(TEXT_PRIMARY);
+        t.setSelectionBackground(ACCENT_BLUE.darker());
+        t.setSelectionForeground(Color.WHITE);
+        t.setGridColor(BORDER_COLOR);
+        t.setRowHeight(26);
+        t.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        t.getTableHeader().setBackground(BG_PANEL);
+        t.getTableHeader().setForeground(TEXT_MUTED);
+        t.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        t.setShowHorizontalLines(true);
+        t.setShowVerticalLines(false);
+        t.setIntercellSpacing(new Dimension(0, 1));
+        return t;
+    }
+
+    private JDialog dialog(String title, int w, int h) {
+        JDialog dlg = new JDialog(this, title, true);
+        dlg.setSize(w, h);
+        dlg.setLocationRelativeTo(this);
+        dlg.getContentPane().setBackground(BG_PANEL);
+        dlg.setLayout(new BorderLayout(0, 8));
+        return dlg;
+    }
+
+    private void showError(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Hata", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void setStatus(String msg) {
+        statusLabel.setText("  " + msg);
+    }
+
+    // ── Renk Renderer (Başvuru Durumu) ────────────────────────────────────────────
+    private class StatusCellRenderer extends DefaultTableCellRenderer {
+
+        @Override
+        public Component getTableCellRendererComponent(JTable t, Object val,
+                boolean sel, boolean foc, int row, int col) {
+            super.getTableCellRendererComponent(t, val, sel, foc, row, col);
+            setBackground(sel ? ACCENT_BLUE.darker() : BG_CARD);
+
+            String s = val != null ? val.toString() : "";
+            setText(s); // METNİ BURADA AÇIKÇA SET EDİYORUZ (Görünmeme sorununu çözer)
+
+            if (s.equalsIgnoreCase("BEKLEMEDE")) {
+                setForeground(ACCENT_ORANGE);
+            } else if (s.contains("Onay")) {
+                setForeground(ACCENT_GREEN);
+            } else if (s.contains("Redded")) {
+                setForeground(ACCENT_RED);
+            } else {
+                setForeground(TEXT_PRIMARY);
+            }
+            setFont(new Font("Segoe UI", Font.BOLD, 12));
+            return this;
+        }
+    }
+
+    private static void showLoginDialog() {
+        JDialog dlg = new JDialog();
+        dlg.setTitle("🐾 Akıllı Barınak Sistemi - Giriş");
+        dlg.setSize(400, 360); // Butonlar sığsın diye biraz uzattık
+        dlg.setLocationRelativeTo(null);
+        dlg.setModal(true);
+        dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dlg.getContentPane().setBackground(BG_DARK);
+        dlg.setLayout(new BorderLayout(0, 0));
+
+        // Başlık
+        JLabel baslik = new JLabel("🐾  Barınak Sistemi", SwingConstants.CENTER);
+        baslik.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        baslik.setForeground(TEXT_PRIMARY);
+        baslik.setBorder(BorderFactory.createEmptyBorder(20, 0, 10, 0));
+        baslik.setBackground(BG_DARK);
+        baslik.setOpaque(true);
+        dlg.add(baslik, BorderLayout.NORTH);
+
+        // Form
+        JPanel form = new JPanel(new GridLayout(3, 2, 8, 12));
+        form.setBackground(BG_PANEL);
+        form.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+
+        JLabel tcLbl = new JLabel("TC Kimlik No:");
+        tcLbl.setForeground(TEXT_MUTED);
+        tcLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+
+        JTextField tcF = styledField();
+
+        JLabel sifreLbl = new JLabel("Şifre:");
+        sifreLbl.setForeground(TEXT_MUTED);
+        sifreLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+
+        JPasswordField sifreF = new JPasswordField();
+        sifreF.setBackground(BG_CARD);
+        sifreF.setForeground(TEXT_PRIMARY);
+        sifreF.setCaretColor(TEXT_PRIMARY);
+        sifreF.setBorder(fieldBorder());
+
+        JLabel rolLbl = new JLabel("Giriş Türü:");
+        rolLbl.setForeground(TEXT_MUTED);
+        rolLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+
+        String[] turler = {"Çalışan", "Müşteri"};
+        JComboBox<String> turBox = styledCombo(turler);
+
+        form.add(tcLbl);
+        form.add(tcF);
+        form.add(sifreLbl);
+        form.add(sifreF);
+        form.add(rolLbl);
+        form.add(turBox);
+        dlg.add(form, BorderLayout.CENTER);
+
+        // Butonlar
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        btnPanel.setBackground(BG_DARK);
+
+        JButton girisBtn = styledButton("Giriş Yap", ACCENT_GREEN);
+        JButton kayitBtn = styledButton("Kayıt Ol", ACCENT_BLUE);
+        JButton cikisBtn = styledButton("Çıkış", new Color(80, 85, 105));
+
+        cikisBtn.addActionListener(e -> System.exit(0));
+
+        // KAYIT OL BUTONU İŞLEMİ
+        kayitBtn.addActionListener(e -> showKayitSecimDialog(dlg));
+
+        // GİRİŞ YAP BUTONU İŞLEMİ
+        girisBtn.addActionListener(e -> {
+            try {
+                long tc = Long.parseLong(tcF.getText().trim());
+                String sifre = new String(sifreF.getPassword()).trim();
+                boolean calisanMi = turBox.getSelectedIndex() == 0;
+
+                BarinakYoneticisi yonetici = BarinakYoneticisi.getInstance();
+
+                if (calisanMi) {
+                    Calisan bulunan = null;
+                    for (Calisan c : yonetici.tumCalisanlariListele()) {
+                        if (c.getId() == tc && c.getPassword().equals(sifre)) {
+                            bulunan = c;
+                            break;
+                        }
+                    }
+                    if (bulunan == null) {
+                        JOptionPane.showMessageDialog(dlg, "TC veya şifre hatalı!", "Hata", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    dlg.dispose();
+                    BarinakGUI gui = new BarinakGUI(bulunan, null);
+                    gui.setVisible(true);
+                } else {
+                    Musteri bulunan = null;
+                    for (Musteri m : yonetici.tumMusterileriListele()) {
+                        if (m.getId() == tc && m.getPassword().equals(sifre)) {
+                            bulunan = m;
+                            break;
+                        }
+                    }
+                    if (bulunan == null) {
+                        JOptionPane.showMessageDialog(dlg, "TC veya şifre hatalı!", "Hata", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    dlg.dispose();
+                    BarinakGUI gui = new BarinakGUI(null, bulunan);
+                    gui.setVisible(true);
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dlg, "TC sayısal olmalıdır!", "Hata", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        btnPanel.add(girisBtn);
+        btnPanel.add(kayitBtn);
+        btnPanel.add(cikisBtn);
+        dlg.add(btnPanel, BorderLayout.SOUTH);
+
+        dlg.setVisible(true);
+    }
+
+    // ── Kayıt Olma İşlemleri (Giriş Ekranı İçin) ───────────────────────────────────
+    private static void showKayitSecimDialog(JDialog parent) {
+        String[] options = {"👥 Müşteri Olarak Kaydol", "👷 Çalışan Olarak Kaydol"};
+        int secim = JOptionPane.showOptionDialog(parent, "Lütfen kayıt türünü seçin:", "Kayıt Ol",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+
+        if (secim == 0) {
+            showStatikMusteriKayit(parent);
+        } else if (secim == 1) {
+            showStatikCalisanKayit(parent);
+        }
+    }
+
+    private static void showStatikMusteriKayit(JDialog parent) {
+        JDialog dlg = new JDialog(parent, "Müşteri Kayıt", true);
+        dlg.setSize(400, 460);
+        dlg.setLocationRelativeTo(parent);
+        dlg.getContentPane().setBackground(BG_PANEL);
+        dlg.setLayout(new BorderLayout(0, 8));
+
+        JPanel form = formPanel();
+        JTextField tcF = styledField();
+        JTextField adF = styledField();
+        JTextField emailF = styledField();
+        JPasswordField sifreF = new JPasswordField();
+        sifreF.setBackground(BG_CARD);
+        sifreF.setForeground(TEXT_PRIMARY);
+        sifreF.setCaretColor(TEXT_PRIMARY);
+        sifreF.setBorder(fieldBorder());
+        JTextField kodF = styledField();
+        JTextField adresF = styledField();
+        JTextField telF = styledField();
+
+        addFormRow(form, "TC Kimlik No:", tcF);
+        addFormRow(form, "Ad Soyad:", adF);
+        addFormRow(form, "E-posta:", emailF);
+        addFormRow(form, "Şifre:", sifreF);
+        addFormRow(form, "Müşteri Kodu:", kodF);
+        addFormRow(form, "Adres:", adresF);
+        addFormRow(form, "Telefon (10-11):", telF);
+
+        JButton kaydetBtn = styledButton("Kayıt Ol", ACCENT_GREEN);
+        kaydetBtn.addActionListener(e -> {
+            try {
+                long tc = Long.parseLong(tcF.getText().trim());
+                tcDogrulaUI(tc);
+
+                BarinakYoneticisi yonetici = BarinakYoneticisi.getInstance();
+                for (Musteri m : yonetici.tumMusterileriListele()) {
+                    if (m.getId() == tc) {
+                        throw new BarinakIstisnasi("Bu TC ile kayıtlı müşteri zaten var.");
+                    }
+                }
+
+                String ad = adF.getText().trim(), email = emailF.getText().trim(), sifre = new String(sifreF.getPassword()).trim();
+                String kod = kodF.getText().trim(), adres = adresF.getText().trim(), tel = telF.getText().trim();
+
+                if (ad.isEmpty() || email.isEmpty() || sifre.isEmpty() || kod.isEmpty()) {
+                    throw new BarinakIstisnasi("Lütfen zorunlu alanları doldurun.");
+                }
+
+                yonetici.musteriEkle(new Musteri(tc, ad, email, sifre, kod, adres, tel));
+                JOptionPane.showMessageDialog(dlg, "Kayıt Başarılı! Şimdi giriş yapabilirsiniz.", "Başarılı", JOptionPane.INFORMATION_MESSAGE);
+                dlg.dispose();
+            } catch (BarinakIstisnasi ex) {
+                JOptionPane.showMessageDialog(dlg, ex.getMessage(), "Hata", JOptionPane.ERROR_MESSAGE);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dlg, "TC sayısal olmalıdır.", "Hata", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        JPanel bottom = darkPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton iptalBtn = styledButton("İptal", new Color(80, 85, 105));
+        iptalBtn.addActionListener(e -> dlg.dispose());
+        bottom.add(kaydetBtn);
+        bottom.add(iptalBtn);
+
+        dlg.add(form, BorderLayout.CENTER);
+        dlg.add(bottom, BorderLayout.SOUTH);
+        dlg.setVisible(true);
+    }
+
+    private static void showStatikCalisanKayit(JDialog parent) {
+        JDialog dlg = new JDialog(parent, "Çalışan Kayıt", true);
+        dlg.setSize(400, 520); // Yeni alan için pencere boyutu biraz uzatıldı
+        dlg.setLocationRelativeTo(parent);
+        dlg.getContentPane().setBackground(BG_PANEL);
+        dlg.setLayout(new BorderLayout(0, 8));
+
+        JPanel form = formPanel();
+        
+        // YENİ: Kurum Onay Kodu Alanı
+        JPasswordField kurumKoduF = new JPasswordField();
+        kurumKoduF.setBackground(BG_CARD);
+        kurumKoduF.setForeground(TEXT_PRIMARY);
+        kurumKoduF.setCaretColor(TEXT_PRIMARY);
+        kurumKoduF.setBorder(fieldBorder());
+
+        JTextField tcF = styledField();
+        JTextField adF = styledField();
+        JTextField emailF = styledField();
+        JPasswordField sifreF = new JPasswordField();
+        sifreF.setBackground(BG_CARD);
+        sifreF.setForeground(TEXT_PRIMARY);
+        sifreF.setCaretColor(TEXT_PRIMARY);
+        sifreF.setBorder(fieldBorder());
+        JTextField kodF = styledField();
+
+        String[] roller = {"Yönetici", "Veteriner", "Bakıcı"};
+        JComboBox<String> rolBox = styledCombo(roller);
+
+        JTextField vardiyaF = styledField();
+        JTextField extraInfoF = styledField();
+
+        addFormRow(form, "Kurum Onay Kodu:", kurumKoduF); // Eklenen güvenlik alanı
+        addFormRow(form, "TC Kimlik No:", tcF);
+        addFormRow(form, "Ad Soyad:", adF);
+        addFormRow(form, "E-posta:", emailF);
+        addFormRow(form, "Şifre:", sifreF);
+        addFormRow(form, "Çalışan Kodu:", kodF);
+        addFormRow(form, "Rol Seçimi:", rolBox);
+        addFormRow(form, "Vardiya:", vardiyaF);
+        addFormRow(form, "Ek Bilgi (Uzmanlık/Bölge):", extraInfoF);
+
+        JButton kaydetBtn = styledButton("Kayıt Ol", ACCENT_GREEN);
+        kaydetBtn.addActionListener(e -> {
+            try {
+                // YENİ: Şifre Doğrulama Kontrolü
+                String girilenKurumKodu = new String(kurumKoduF.getPassword()).trim();
+                if (!girilenKurumKodu.equals("BARINAK2026")) {
+                    throw new BarinakIstisnasi("Geçersiz Kurum Onay Kodu! Sisteme yetkisiz çalışan kaydı yapılamaz.");
+                }
+
+                long tc = Long.parseLong(tcF.getText().trim());
+                tcDogrulaUI(tc);
+
+                BarinakYoneticisi yonetici = BarinakYoneticisi.getInstance();
+                for (Calisan c : yonetici.tumCalisanlariListele()) {
+                    if (c.getId() == tc) {
+                        throw new BarinakIstisnasi("Bu TC ile kayıtlı çalışan zaten var.");
+                    }
+                }
+
+                String ad = adF.getText().trim();
+                String email = emailF.getText().trim();
+                String sifre = new String(sifreF.getPassword()).trim();
+                String kod = kodF.getText().trim();
+                String vardiya = vardiyaF.getText().trim();
+                String extraInfo = extraInfoF.getText().trim();
+                int rolSecim = rolBox.getSelectedIndex();
+
+                if (ad.isEmpty() || email.isEmpty() || sifre.isEmpty() || kod.isEmpty()) {
+                    throw new BarinakIstisnasi("Lütfen zorunlu alanları doldurun.");
+                }
+
+                Calisan yeniCalisan;
+                if (rolSecim == 0) {
+                    yeniCalisan = new Yonetici(tc, ad, email, sifre, kod, vardiya);
+                } else if (rolSecim == 1) {
+                    if (extraInfo.isEmpty()) {
+                        throw new BarinakIstisnasi("Veteriner için uzmanlık alanı (Ek Bilgi) girmelisiniz.");
+                    }
+                    yeniCalisan = new Veteriner(tc, ad, email, sifre, kod, vardiya, extraInfo);
+                } else {
+                    if (extraInfo.isEmpty()) {
+                        throw new BarinakIstisnasi("Bakıcı için sorumlu bölge (Ek Bilgi) girmelisiniz.");
+                    }
+                    yeniCalisan = new Bakici(tc, ad, email, sifre, kod, vardiya, extraInfo);
+                }
+
+                yonetici.calisanEkle(yeniCalisan);
+                JOptionPane.showMessageDialog(dlg, "Kayıt Başarılı! Şimdi giriş yapabilirsiniz.", "Başarılı", JOptionPane.INFORMATION_MESSAGE);
+                dlg.dispose();
+            } catch (BarinakIstisnasi ex) {
+                JOptionPane.showMessageDialog(dlg, ex.getMessage(), "Hata", JOptionPane.ERROR_MESSAGE);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dlg, "TC sayısal olmalıdır.", "Hata", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        JPanel bottom = darkPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton iptalBtn = styledButton("İptal", new Color(80, 85, 105));
+        iptalBtn.addActionListener(e -> dlg.dispose());
+        bottom.add(kaydetBtn);
+        bottom.add(iptalBtn);
+
+        dlg.add(form, BorderLayout.CENTER);
+        dlg.add(bottom, BorderLayout.SOUTH);
+        dlg.setVisible(true);
+    }
+
+    // ── Veteriner: Sağlık Kayıtları İşlemleri ────────────────────────────────────
+    private void showSaglikKayitlariDialog() {
+        int row = hayvanTable.getSelectedRow();
+        if (row < 0) {
+            showError("Lütfen sağlık kayıtlarını görmek için listeden bir hayvan seçin.");
+            return;
+        }
+
+        int animalId = (int) hayvanModel.getValueAt(row, 0);
+        Hayvan seciliHayvan;
+        try {
+            seciliHayvan = yonetici.hayvanBul(animalId);
+        } catch (BarinakIstisnasi ex) {
+            showError(ex.getMessage());
+            return;
+        }
+
+        JDialog dlg = dialog("🩺 " + seciliHayvan.getName() + " - Sağlık Kayıtları", 550, 400);
+
+        // Sağlık Kayıtları Tablosu
+        String[] cols = {"Tarih", "Tanı", "Aşı"};
+        DefaultTableModel skModel = new DefaultTableModel(cols, 0) {
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+        };
+
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm");
+        for (SaglikKaydi sk : seciliHayvan.getSaglikKayitlari()) {
+            skModel.addRow(new Object[]{sdf.format(sk.getTarih()), sk.getTani(), sk.getAsi()});
+        }
+
+        JTable skTable = styledTable(skModel);
+        dlg.add(new JScrollPane(skTable) {
+            {
+                getViewport().setBackground(BG_CARD);
+            }
+        }, BorderLayout.CENTER);
+
+        JPanel bottom = darkPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton yeniKayitBtn = styledButton("➕ Yeni Kayıt Ekle", ACCENT_GREEN);
+        yeniKayitBtn.addActionListener(e -> showYeniSaglikKaydiDialog(seciliHayvan, skModel));
+
+        JButton kapatBtn = styledButton("Kapat", new Color(80, 85, 105));
+        kapatBtn.addActionListener(e -> dlg.dispose());
+
+        bottom.add(yeniKayitBtn);
+        bottom.add(kapatBtn);
+        dlg.add(bottom, BorderLayout.SOUTH);
+
+        dlg.setVisible(true);
+    }
+
+    private void showYeniSaglikKaydiDialog(Hayvan hayvan, DefaultTableModel skModel) {
+        JDialog dlg = dialog("Yeni Sağlık Kaydı", 350, 250);
+        JPanel form = formPanel();
+
+        JTextField taniF = styledField();
+        JTextField asiF = styledField();
+
+        addFormRow(form, "Konulan Tanı:", taniF);
+        addFormRow(form, "Yapılan Aşı:", asiF);
+
+        JButton kaydetBtn = styledButton("Kaydet", ACCENT_GREEN);
+        kaydetBtn.addActionListener(e -> {
+            String tani = taniF.getText().trim();
+            String asi = asiF.getText().trim();
+            if (tani.isEmpty() || asi.isEmpty()) {
+                showError("Tanı ve Aşı alanları boş bırakılamaz.");
+                return;
+            }
+
+            SaglikKaydi yeniKayit = new SaglikKaydi(0, hayvan.getAnimalId(), new java.util.Date(), tani, asi);
+            try {
+                yonetici.saglikKaydiEkle(yeniKayit, hayvan, girisYapanCalisan);
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm");
+                skModel.addRow(new Object[]{sdf.format(yeniKayit.getTarih()), yeniKayit.getTani(), yeniKayit.getAsi()});
+
+                setStatus("✅ " + hayvan.getName() + " için sağlık kaydı eklendi.");
+                dlg.dispose();
+            } catch (BarinakIstisnasi ex) {
+                showError(ex.getMessage());
+            }
+        });
+
+        JPanel bottom = darkPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottom.add(kaydetBtn);
+        bottom.add(cancelButton(dlg));
+
+        dlg.add(form, BorderLayout.CENTER);
+        dlg.add(bottom, BorderLayout.SOUTH);
+        dlg.setVisible(true);
+    }
+
+    // ── Main ──────────────────────────────────────────────────────────────────────
+    public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+        } catch (Exception ignored) {
+        }
+
+        UIManager.put("TabbedPane.foreground", new Color(240, 246, 252));
+        UIManager.put("TabbedPane.selectedForeground", new Color(240, 246, 252));
+        UIManager.put("TabbedPane.background", new Color(18, 18, 24));
+        UIManager.put("TabbedPane.selected", new Color(35, 35, 45));
+        UIManager.put("TabbedPane.contentAreaColor", new Color(18, 18, 24));
+        UIManager.put("TabbedPane.light", new Color(48, 54, 61));
+        UIManager.put("TabbedPane.shadow", new Color(18, 18, 24));
+        UIManager.put("TabbedPane.darkShadow", new Color(18, 18, 24));
+        UIManager.put("TabbedPane.focus", new Color(88, 166, 255));
+
+        SwingUtilities.invokeLater(() -> {
+            VeritabaniIslemleri.tablolariOlustur();
+            showLoginDialog();
+        });
+    }
+}

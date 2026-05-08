@@ -107,23 +107,34 @@ public class BarinakYoneticisi {
 	// ── Başvuru Yönetimi ─────────────────────────────────────────────────────────
 
 	public void basvuruKaydet(SahiplenmeBasvurusu basvuru) throws BarinakIstisnasi {
-		if (basvuru == null) {
-			throw new BarinakIstisnasi("Başvuru null olamaz.");
-		}
-		for (SahiplenmeBasvurusu b : basvurular) {
-			if (b.getHayvan() != null
-					&& basvuru.getHayvan() != null
-					&& b.getHayvan().getAnimalId() == basvuru.getHayvan().getAnimalId()
-					&& b.getDurum().equalsIgnoreCase("BEKLEMEDE")) {
-				throw new BarinakIstisnasi(
-						basvuru.getHayvan().getName() + " isimli hayvan için zaten beklemede olan bir başvuru var!");
-			}
-		}
+        if (basvuru == null) {
+            throw new BarinakIstisnasi("Başvuru null olamaz.");
+        }
 
-		basvurular.add(basvuru);
-		VeritabaniIslemleri.basvuruKaydet(basvuru);
-		System.out.println("[KAYIT] Başvuru #" + basvuru.getAppId() + " sisteme eklendi.");
-	}
+        for (SahiplenmeBasvurusu b : basvurular) {
+            // 1. KONTROL: Hayvan için zaten bekleyen bir başvuru var mı? (Mevcut kontrol)
+            if (b.getHayvan() != null
+                    && basvuru.getHayvan() != null
+                    && b.getHayvan().getAnimalId() == basvuru.getHayvan().getAnimalId()
+                    && b.getDurum().equalsIgnoreCase("BEKLEMEDE")) {
+                throw new BarinakIstisnasi(
+                        basvuru.getHayvan().getName() + " isimli hayvan için zaten beklemede olan bir başvuru var!");
+            }
+
+            // 2. KONTROL (YENİ): Bu müşteri bu hayvan için daha önce reddedildi mi?
+            if (b.getMusteri() != null && b.getHayvan() != null
+                    && b.getMusteri().getId() == basvuru.getMusteri().getId()
+                    && b.getHayvan().getAnimalId() == basvuru.getHayvan().getAnimalId()
+                    && b.getDurum().equalsIgnoreCase("Reddedildi")) {
+                throw new BarinakIstisnasi("Bu hayvan için yaptığınız önceki başvuru reddedilmiştir. "
+                        + "Aynı hayvana tekrar başvuru yapamazsınız.");
+            }
+        }
+
+        basvurular.add(basvuru);
+        VeritabaniIslemleri.basvuruKaydet(basvuru);
+        System.out.println("[KAYIT] Başvuru #" + basvuru.getAppId() + " sisteme eklendi.");
+    }
 
 	public List<SahiplenmeBasvurusu> bekleyenBasvurular() {
 		return basvurular.stream()

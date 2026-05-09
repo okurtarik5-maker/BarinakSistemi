@@ -82,7 +82,7 @@ public class BarinakGUI extends JFrame {
 		leftPanel.setBackground(BG_PANEL);
 
 		// Logo Metni
-		JLabel logo = new JLabel("🐾 Akıllı Barınak Sistemi");
+		JLabel logo = new JLabel("Akıllı Barınak Sistemi");
 		logo.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		logo.setForeground(TEXT_PRIMARY);
 		leftPanel.add(logo);
@@ -121,7 +121,7 @@ public class BarinakGUI extends JFrame {
 		rightPanel.setBackground(BG_PANEL);
 
 		// Oturumu Kapat Butonu
-		JButton cikisBtn = styledButton("↩ Oturumu Kapat", ACCENT_RED);
+		JButton cikisBtn = styledButton("[X] Oturumu Kapat", ACCENT_RED);
 		cikisBtn.addActionListener(e -> {
 			int secim = JOptionPane.showConfirmDialog(this, "Oturumu kapatıp giriş ekranına dönmek istiyor musunuz?",
 					"Çıkış", JOptionPane.YES_NO_OPTION);
@@ -130,9 +130,9 @@ public class BarinakGUI extends JFrame {
 				showLoginDialog();
 			}
 		});
-
+		
 		// Durum Raporu Butonu
-		JButton raporBtn = styledButton("📊 Durum Raporu", ACCENT_BLUE);
+		JButton raporBtn = styledButton("[#] Durum Raporu", ACCENT_BLUE);
 		raporBtn.addActionListener(e -> showDurumRaporu());
 
 		rightPanel.add(cikisBtn);
@@ -151,16 +151,16 @@ public class BarinakGUI extends JFrame {
 
 		if (girisYapanCalisan != null) {
 			// Çalışan girişi — tüm sekmeler
-			tp.addTab("🐶  Hayvanlar", buildHayvanlarPanel());
-			tp.addTab("👥  Müşteriler", buildMusterilerPanel());
-			tp.addTab("👷  Çalışanlar", buildCalisanlarPanel());
-			tp.addTab("📋  Başvurular", buildBasvurularPanel());
+			tp.addTab(" [H] Hayvanlar", buildHayvanlarPanel());
+			tp.addTab(" [M] Müşteriler", buildMusterilerPanel());
+			tp.addTab(" [Ç] Çalışanlar", buildCalisanlarPanel());
+			tp.addTab(" [B] Başvurular", buildBasvurularPanel());
 		} else {
 			// Müşteri girişi — hayvanlar ve kendi başvuruları
-			tp.addTab("🐶  Hayvanlar", buildHayvanlarPanel()); // Müşteriye eklendi
-			tp.addTab("📋  Başvurularım", buildMusteriBasvurularPanel());
+			tp.addTab("[H]  Hayvanlar", buildHayvanlarPanel()); // Müşteriye eklendi
+			tp.addTab("[M] Başvurularım", buildMusteriBasvurularPanel());
 		}
-		tp.addTab("👤  Profilim", buildProfilPanel());
+		tp.addTab("[P]  Profilim", buildProfilPanel());
 		return tp;
 	}
 
@@ -169,7 +169,7 @@ public class BarinakGUI extends JFrame {
 		bar.setBackground(new Color(25, 28, 38));
 		bar.setBorder(new MatteBorder(1, 0, 0, 0, BORDER_COLOR));
 		bar.setPreferredSize(new Dimension(0, 28));
-		statusLabel = new JLabel("  Sistem hazır.");
+		statusLabel = new JLabel("  Sistem hazır.");
 		statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
 		statusLabel.setForeground(TEXT_MUTED);
 		bar.add(statusLabel, BorderLayout.WEST);
@@ -201,16 +201,16 @@ public class BarinakGUI extends JFrame {
 
 		// YETKİ KONTROLÜ: Sadece Yönetici Hayvan Ekleyebilir
 		if (girisYapanCalisan instanceof Yonetici) {
-			JButton ekleBtn = styledButton("➕  Hayvan Ekle", ACCENT_GREEN);
+			JButton ekleBtn = styledButton("[+]  Hayvan Ekle", ACCENT_GREEN);
 			ekleBtn.addActionListener(e -> showHayvanEkleDialog());
 			btnRow.add(ekleBtn);
 		}
 
-		JButton saglikBtn = styledButton("🩺  Sağlık Kayıtları", ACCENT_ORANGE);
+		JButton saglikBtn = styledButton("[!]  Sağlık Kayıtları", ACCENT_ORANGE);
 		saglikBtn.addActionListener(e -> showSaglikKayitlariDialog());
 		btnRow.add(saglikBtn);
 
-		JButton yenileBtn = styledButton("🔄  Yenile", ACCENT_BLUE);
+		JButton yenileBtn = styledButton("[R]  Yenile", ACCENT_BLUE);
 		yenileBtn.addActionListener(e -> refreshHayvanTable());
 		btnRow.add(yenileBtn);
 
@@ -277,7 +277,7 @@ public class BarinakGUI extends JFrame {
 				yonetici.hayvanEkle(yeni, seciliCalisan);
 
 				refreshHayvanTable();
-				setStatus("✅  " + ad + " barınağa eklendi.");
+				setStatus("DONE: " + ad + " barınağa eklendi.");
 				dlg.dispose();
 			} catch (BarinakIstisnasi ex) {
 				showError(ex.getMessage());
@@ -309,12 +309,12 @@ public class BarinakGUI extends JFrame {
 		JPanel btnRow = darkPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
 
 		if (girisYapanCalisan instanceof Yonetici) {
-			JButton ekleBtn = styledButton("➕  Müşteri Ekle", ACCENT_GREEN);
+			JButton ekleBtn = styledButton("[+]  Müşteri Ekle", ACCENT_GREEN);
 			ekleBtn.addActionListener(e -> showMusteriEkleDialog());
 			btnRow.add(ekleBtn);
 		}
 
-		JButton yenileBtn = styledButton("🔄  Yenile", ACCENT_BLUE);
+		JButton yenileBtn = styledButton("[R]  Yenile", ACCENT_BLUE);
 		yenileBtn.addActionListener(e -> refreshMusteriTable());
 		btnRow.add(yenileBtn);
 
@@ -376,7 +376,7 @@ public class BarinakGUI extends JFrame {
 
 				yonetici.musteriEkle(new Musteri(tc, ad, email, sifre, kod, adres, tel));
 				refreshMusteriTable();
-				setStatus("✅  Müşteri " + ad + " eklendi.");
+				setStatus("Müşteri " + ad + " eklendi.");
 				dlg.dispose();
 			} catch (BarinakIstisnasi ex) {
 				showError(ex.getMessage());
@@ -408,12 +408,12 @@ public class BarinakGUI extends JFrame {
 		JPanel btnRow = darkPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
 
 		if (girisYapanCalisan instanceof Yonetici) {
-			JButton ekleBtn = styledButton("➕  Çalışan Ekle", ACCENT_GREEN);
+			JButton ekleBtn = styledButton("[+]  Çalışan Ekle", ACCENT_GREEN);
 			ekleBtn.addActionListener(e -> showCalisanEkleDialog());
 			btnRow.add(ekleBtn);
 		}
 
-		JButton yenileBtn = styledButton("🔄  Yenile", ACCENT_BLUE);
+		JButton yenileBtn = styledButton("[R]  Yenile", ACCENT_BLUE);
 		yenileBtn.addActionListener(e -> refreshCalisanTable());
 		btnRow.add(yenileBtn);
 
@@ -487,7 +487,7 @@ public class BarinakGUI extends JFrame {
 
 				yonetici.calisanEkle(yeniCalisan);
 				refreshCalisanTable();
-				setStatus("✅  Çalışan " + ad + " eklendi.");
+				setStatus("Çalışan " + ad + " eklendi.");
 				dlg.dispose();
 			} catch (BarinakIstisnasi ex) {
 				showError(ex.getMessage());
@@ -522,20 +522,20 @@ public class BarinakGUI extends JFrame {
 		// DİKKAT: "Yeni Başvuru" butonu buradan tamamen kaldırıldı!
 		// SADECE Yönetici onay/red butonlarını görebilir
 		if (girisYapanCalisan instanceof Yonetici) {
-			JButton onaylaBtn = styledButton("✔  Onayla", ACCENT_GREEN);
-			JButton reddetBtn = styledButton("✘  Reddet", ACCENT_RED);
+			JButton onaylaBtn = styledButton("[OK]  Onayla", ACCENT_GREEN);
+			JButton reddetBtn = styledButton("[X]  Reddet", ACCENT_RED);
 			onaylaBtn.addActionListener(e -> basvuruIslem(true));
 			reddetBtn.addActionListener(e -> basvuruIslem(false));
 			btnRow.add(onaylaBtn);
 			btnRow.add(reddetBtn);
 		}
 
-		JButton yenileBtn = styledButton("🔄  Yenile", ACCENT_BLUE);
+		JButton yenileBtn = styledButton("[R]  Yenile", ACCENT_BLUE);
 		yenileBtn.addActionListener(e -> refreshBasvuruTable());
 		btnRow.add(yenileBtn);
 
 		// buildBasvurularPanel metodu içinde, diğer butonların yanına ekle:
-		JButton detayBtn = styledButton("🔍 Detayları Gör", ACCENT_BLUE);
+		JButton detayBtn = styledButton("[?] Detayları Gör", ACCENT_BLUE);
 		detayBtn.addActionListener(e -> {
 			int row = basvuruTable.getSelectedRow();
 			if (row < 0) {
@@ -573,12 +573,12 @@ public class BarinakGUI extends JFrame {
 		JPanel btnRow = darkPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
 
 		// Yeni Başvuru Butonu
-		JButton yeniBtn = styledButton("➕  Yeni Başvuru", ACCENT_GREEN);
+		JButton yeniBtn = styledButton("[+]  Yeni Başvuru", ACCENT_GREEN);
 		yeniBtn.addActionListener(e -> showYeniBasvuruDialog());
 		btnRow.add(yeniBtn);
 
 		// --- YENİ: Müşteri İçin Detay Butonu ---
-		JButton detayBtn = styledButton("🔍  Detayları Gör", ACCENT_BLUE);
+		JButton detayBtn = styledButton("[?] Detayları Gör", ACCENT_BLUE);
 		detayBtn.addActionListener(e -> {
 			int row = musteriBasvuruTable.getSelectedRow();
 			if (row < 0) {
@@ -592,7 +592,7 @@ public class BarinakGUI extends JFrame {
 		btnRow.add(detayBtn);
 
 		// Yenile Butonu
-		JButton yenileBtn = styledButton("🔄  Yenile", ACCENT_BLUE);
+		JButton yenileBtn = styledButton("[R]  Yenile", ACCENT_BLUE);
 		yenileBtn.addActionListener(e -> refreshMusteriBasvuruTable());
 		btnRow.add(yenileBtn);
 
@@ -677,7 +677,7 @@ public class BarinakGUI extends JFrame {
 					// Buraya Veritabanı güncelleme kodu gelebilir:
 					// VeritabaniIslemleri.musteriGuncelle(girisYapanMusteri);
 				}
-				setStatus("✅ Profil bilgileriniz güncellendi.");
+				setStatus("Profil bilgileriniz güncellendi.");
 				JOptionPane.showMessageDialog(this, "Bilgileriniz başarıyla kaydedildi!", "Profil",
 						JOptionPane.INFORMATION_MESSAGE);
 			} catch (Exception ex) {
@@ -758,7 +758,7 @@ public class BarinakGUI extends JFrame {
 
 				yonetici.basvuruKaydet(basvuru);
 				refreshAllTables();
-				setStatus("✅  Başvuru #" + yeniId + " merkeze iletildi.");
+				setStatus("Başvuru #" + yeniId + " merkeze iletildi.");
 				dlg.dispose();
 			} catch (BarinakIstisnasi ex) {
 				showError(ex.getMessage());
@@ -820,10 +820,10 @@ public class BarinakGUI extends JFrame {
 			SahiplenmeBasvurusu hedef = yonetici.basvuruBul(appId);
 			if (onayla) {
 				yonetici.basvuruOnayla(hedef, yetkili);
-				setStatus("✅  Başvuru #" + appId + " onaylandı.");
+				setStatus("Başvuru #" + appId + " onaylandı.");
 			} else {
 				yonetici.basvuruReddet(hedef, yetkili);
-				setStatus("❌  Başvuru #" + appId + " reddedildi.");
+				setStatus("[X]  Başvuru #" + appId + " reddedildi.");
 			}
 			refreshAllTables();
 		} catch (BarinakIstisnasi ex) {
@@ -958,12 +958,12 @@ public class BarinakGUI extends JFrame {
 		JPanel p = darkPanel(new GridLayout(6, 2, 10, 10));
 		p.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-		addRaporRow(p, "🐾  Toplam Hayvan", String.valueOf(hayvan));
-		addRaporRow(p, "👥  Kayıtlı Müşteri", String.valueOf(musteri));
-		addRaporRow(p, "👷  Aktif Çalışan", String.valueOf(calisan));
-		addRaporRow(p, "📋  Toplam Başvuru", String.valueOf(basvuru));
-		addRaporRow(p, "⏳  Bekleyen Başvuru", String.valueOf(bekleyen));
-		addRaporRow(p, "✅  İşlenen Başvuru", String.valueOf(basvuru - bekleyen));
+		addRaporRow(p, "🐾  Toplam Hayvan", String.valueOf(hayvan));
+		addRaporRow(p, "👥  Kayıtlı Müşteri", String.valueOf(musteri));
+		addRaporRow(p, "👷  Aktif Çalışan", String.valueOf(calisan));
+		addRaporRow(p, "📋  Toplam Başvuru", String.valueOf(basvuru));
+		addRaporRow(p, "⏳  Bekleyen Başvuru", String.valueOf(bekleyen));
+		addRaporRow(p, "✅  İşlenen Başvuru", String.valueOf(basvuru - bekleyen));
 
 		dlg.add(p);
 		dlg.setVisible(true);
@@ -1096,7 +1096,7 @@ public class BarinakGUI extends JFrame {
 	}
 
 	private void setStatus(String msg) {
-		statusLabel.setText("  " + msg);
+		statusLabel.setText("  " + msg);
 	}
 
 	// ── Renk Renderer (Başvuru Durumu)
@@ -1128,7 +1128,7 @@ public class BarinakGUI extends JFrame {
 
 	private static void showLoginDialog() {
 		JDialog dlg = new JDialog();
-		dlg.setTitle("🐾 Akıllı Barınak Sistemi - Giriş");
+		dlg.setTitle("Akıllı Barınak Sistemi - Giriş");
 		dlg.setSize(400, 360);
 		dlg.setLocationRelativeTo(null);
 		dlg.setModal(true);
@@ -1136,7 +1136,7 @@ public class BarinakGUI extends JFrame {
 		dlg.getContentPane().setBackground(BG_DARK);
 		dlg.setLayout(new BorderLayout(0, 0));
 
-		JLabel baslik = new JLabel("🐾  Barınak Sistemi", SwingConstants.CENTER);
+		JLabel baslik = new JLabel("Barınak Sistemi", SwingConstants.CENTER);
 		baslik.setFont(new Font("Segoe UI", Font.BOLD, 20));
 		baslik.setForeground(TEXT_PRIMARY);
 		baslik.setBorder(BorderFactory.createEmptyBorder(20, 0, 10, 0));
@@ -1505,7 +1505,7 @@ public class BarinakGUI extends JFrame {
 				skModel.addRow(
 						new Object[] { sdf.format(yeniKayit.getTarih()), yeniKayit.getTani(), yeniKayit.getAsi() });
 
-				setStatus("✅ " + hayvan.getName() + " için sağlık kaydı eklendi.");
+				setStatus(hayvan.getName() + " için sağlık kaydı eklendi.");
 				dlg.dispose();
 			} catch (BarinakIstisnasi ex) {
 				showError(ex.getMessage());
@@ -1538,4 +1538,4 @@ public class BarinakGUI extends JFrame {
 			showLoginDialog();
 		});
 	}
-}
+} 

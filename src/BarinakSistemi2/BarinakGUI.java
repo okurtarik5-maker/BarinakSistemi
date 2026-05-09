@@ -556,6 +556,19 @@ public class BarinakGUI extends JFrame {
         yenileBtn.addActionListener(e -> refreshBasvuruTable());
         btnRow.add(yenileBtn);
 
+        // buildBasvurularPanel metodu içinde, diğer butonların yanına ekle:
+        JButton detayBtn = styledButton("🔍 Detayları Gör", ACCENT_BLUE);
+        detayBtn.addActionListener(e -> {
+            int row = basvuruTable.getSelectedRow();
+            if (row < 0) {
+                showError("Lütfen detaylarını görmek istediğiniz başvuruyu seçin.");
+                return;
+            }
+            int appId = (int) basvuruModel.getValueAt(row, 0);
+            showBasvuruDetayDialog(appId);
+        });
+        btnRow.add(detayBtn);
+
         panel.add(btnRow, BorderLayout.SOUTH);
         return panel;
     }
@@ -566,33 +579,44 @@ public class BarinakGUI extends JFrame {
 
         String[] cols = {"Başvuru No", "Hayvan", "Durum", "Tarih"};
         musteriBasvuruModel = new DefaultTableModel(cols, 0) {
-            public boolean isCellEditable(int r, int c) {
-                return false;
-            }
+            public boolean isCellEditable(int r, int c) { return false; }
         };
         musteriBasvuruTable = styledTable(musteriBasvuruModel);
         musteriBasvuruTable.getColumnModel().getColumn(2).setCellRenderer(new StatusCellRenderer());
         panel.add(new JScrollPane(musteriBasvuruTable) {
-            {
-                getViewport().setBackground(BG_CARD);
-            }
+            { getViewport().setBackground(BG_CARD); }
         }, BorderLayout.CENTER);
 
+        // --- Buton Satırı ---
         JPanel btnRow = darkPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        
+        // Yeni Başvuru Butonu
         JButton yeniBtn = styledButton("➕  Yeni Başvuru", ACCENT_GREEN);
         yeniBtn.addActionListener(e -> showYeniBasvuruDialog());
         btnRow.add(yeniBtn);
 
-        // Müşteri için de Yenile Butonu
+        // --- YENİ: Müşteri İçin Detay Butonu ---
+        JButton detayBtn = styledButton("🔍  Detayları Gör", ACCENT_BLUE);
+        detayBtn.addActionListener(e -> {
+            int row = musteriBasvuruTable.getSelectedRow();
+            if (row < 0) {
+                showError("Lütfen detayını görmek istediğiniz başvuruyu seçin.");
+                return;
+            }
+            // Başvuru No ilk sütunda (0. index)
+            int appId = (int) musteriBasvuruModel.getValueAt(row, 0);
+            showBasvuruDetayDialog(appId);
+        });
+        btnRow.add(detayBtn);
+
+        // Yenile Butonu
         JButton yenileBtn = styledButton("🔄  Yenile", ACCENT_BLUE);
         yenileBtn.addActionListener(e -> refreshMusteriBasvuruTable());
         btnRow.add(yenileBtn);
 
         panel.add(btnRow, BorderLayout.SOUTH);
 
-        // Tabloyu ilk açılışta doldur
         refreshMusteriBasvuruTable();
-
         return panel;
     }
 
@@ -831,6 +855,56 @@ public class BarinakGUI extends JFrame {
         } catch (BarinakIstisnasi ex) {
             showError(ex.getMessage());
         }
+    }
+
+    private void showBasvuruDetayDialog(int appId) {
+        try {
+            SahiplenmeBasvurusu b = yonetici.basvuruBul(appId);
+            Musteri m = b.getMusteri();
+            Hayvan h = b.getHayvan();
+
+            JDialog dlg = dialog("Başvuru Detayı #" + appId, 450, 500);
+            JPanel mainP = new JPanel(new GridLayout(0, 1, 5, 5));
+            mainP.setBackground(BG_PANEL);
+            mainP.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+            // --- Müşteri Bilgileri Bölümü ---
+            mainP.add(createDetailHeader("👤 Müşteri Bilgileri"));
+            mainP.add(new JLabel("Ad Soyad: " + m.getName()));
+            mainP.add(new JLabel("TC Kimlik: " + m.getId()));
+            mainP.add(new JLabel("E-posta: " + m.getEmail()));
+            mainP.add(new JLabel("Telefon: " + m.getPhone()));
+            mainP.add(new JLabel("Adres: " + m.getAddress()));
+
+            mainP.add(new JSeparator(JSeparator.HORIZONTAL));
+
+            // --- Hayvan Bilgileri Bölümü ---
+            mainP.add(createDetailHeader("🐶 Hayvan Bilgileri"));
+            mainP.add(new JLabel("Adı: " + h.getName()));
+            mainP.add(new JLabel("Tür / Irk: " + h.getTur() + " / "
+                    + (h instanceof Kedi ? ((Kedi) h).getIrk() : ((Kopek) h).getIrk())));
+            mainP.add(new JLabel("Yaş: " + h.getYas()));
+            mainP.add(new JLabel("Sağlık Durumu: " + h.getSaglikDurumu()));
+
+            JButton kapatBtn = styledButton("Kapat", Color.GRAY);
+            kapatBtn.addActionListener(e -> dlg.dispose());
+
+            dlg.add(new JScrollPane(mainP), BorderLayout.CENTER);
+            dlg.add(kapatBtn, BorderLayout.SOUTH);
+            dlg.setVisible(true);
+
+        } catch (Exception ex) {
+            showError("Detaylar yüklenirken hata oluştu: " + ex.getMessage());
+        }
+    }
+
+    // Yardımcı metot: Başlıkları belirgin yapmak için
+    private JLabel createDetailHeader(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        l.setForeground(ACCENT_BLUE);
+        l.setBorder(BorderFactory.createEmptyBorder(10, 0, 5, 0));
+        return l;
     }
 
     // ── Tablo Yenileme ────────────────────────────────────────────────────────────

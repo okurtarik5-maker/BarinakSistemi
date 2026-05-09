@@ -75,32 +75,68 @@ public class BarinakGUI extends JFrame {
         header.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_COLOR));
         header.setPreferredSize(new Dimension(0, 60));
 
-        JLabel logo = new JLabel("  🐾  Akıllı Barınak Yönetim Sistemi");
+        // ── SOL TARAF: Logo ve Dinamik Kullanıcı Bilgisi ──────────────────────
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 16));
+        leftPanel.setBackground(BG_PANEL);
+
+        // Logo Metni
+        JLabel logo = new JLabel("🐾 Akıllı Barınak Sistemi");
         logo.setFont(new Font("Segoe UI", Font.BOLD, 18));
         logo.setForeground(TEXT_PRIMARY);
-        header.add(logo, BorderLayout.WEST);
+        leftPanel.add(logo);
 
-        // --- YENİ: Giriş Ekranına Dön Butonu ---
+        // Ayırıcı Çizgi
+        JLabel sep = new JLabel("|");
+        sep.setForeground(BORDER_COLOR);
+        sep.setFont(new Font("Segoe UI", Font.PLAIN, 20));
+        leftPanel.add(sep);
+
+        // Dinamik İsim ve Rol Belirleme
+        String isim, rol;
+        if (girisYapanCalisan != null) {
+            isim = girisYapanCalisan.getName();
+            rol = girisYapanCalisan.getRole(); // Yönetici, Veteriner veya Bakıcı
+        } else {
+            isim = girisYapanMusteri.getName();
+            rol = "Müşteri";
+        }
+
+        // Kullanıcı Bilgi Etiketi
+        JLabel userLabel = new JLabel(isim + " ");
+        userLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        userLabel.setForeground(TEXT_PRIMARY);
+        leftPanel.add(userLabel);
+
+        JLabel roleLabel = new JLabel("(" + rol + ")");
+        roleLabel.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+        roleLabel.setForeground(ACCENT_BLUE); // Rolü mavi yaparak vurguluyoruz
+        leftPanel.add(roleLabel);
+
+        header.add(leftPanel, BorderLayout.WEST);
+
+        // ── SAĞ TARAF: Butonlar ───────────────────────────────────────────────
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 12));
+        rightPanel.setBackground(BG_PANEL);
+
+        // Oturumu Kapat Butonu
         JButton cikisBtn = styledButton("↩ Oturumu Kapat", ACCENT_RED);
         cikisBtn.addActionListener(e -> {
             int secim = JOptionPane.showConfirmDialog(this,
-                    "Oturumu kapatıp giriş ekranına dönmek istediğinize emin misiniz?",
-                    "Oturum Kapatılıyor", JOptionPane.YES_NO_OPTION);
-
+                    "Oturumu kapatıp giriş ekranına dönmek istiyor musunuz?",
+                    "Çıkış", JOptionPane.YES_NO_OPTION);
             if (secim == JOptionPane.YES_OPTION) {
-                this.dispose();       // Mevcut ana pencereyi (GUI) kapatır
-                showLoginDialog();    // Giriş ekranını (Static metod) tekrar açar
+                this.dispose();
+                showLoginDialog();
             }
         });
 
+        // Durum Raporu Butonu
         JButton raporBtn = styledButton("📊 Durum Raporu", ACCENT_BLUE);
         raporBtn.addActionListener(e -> showDurumRaporu());
 
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
-        right.setBackground(BG_PANEL);
-        right.add(cikisBtn); // Çıkış butonu eklendi
-        right.add(raporBtn);
-        header.add(right, BorderLayout.EAST);
+        rightPanel.add(cikisBtn);
+        rightPanel.add(raporBtn);
+        header.add(rightPanel, BorderLayout.EAST);
 
         return header;
     }
@@ -123,7 +159,7 @@ public class BarinakGUI extends JFrame {
             tp.addTab("🐶  Hayvanlar", buildHayvanlarPanel()); // Müşteriye eklendi
             tp.addTab("📋  Başvurularım", buildMusteriBasvurularPanel());
         }
-
+        tp.addTab("👤  Profilim", buildProfilPanel());
         return tp;
     }
 
@@ -558,6 +594,105 @@ public class BarinakGUI extends JFrame {
         refreshMusteriBasvuruTable();
 
         return panel;
+    }
+
+    // ── Profil Sekmesi ──────────────────────────────────────────────────────────
+    private JPanel buildProfilPanel() {
+        JPanel mainPanel = darkPanel(new BorderLayout());
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+
+        // Bilgileri bir kart (panel) içinde toplayalım
+        JPanel card = new JPanel(new GridBagLayout());
+        card.setBackground(BG_PANEL);
+        card.setBorder(new LineBorder(BORDER_COLOR, 1, true));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Kimin giriş yaptığını kontrol et
+        boolean isCalisan = (girisYapanCalisan != null);
+        String ad = isCalisan ? girisYapanCalisan.getName() : girisYapanMusteri.getName();
+        String tc = String.valueOf(isCalisan ? girisYapanCalisan.getId() : girisYapanMusteri.getId());
+
+        // Düzenlenebilir alanlar
+        JTextField emailF = styledField();
+        JTextField sifreF = styledField();
+        JTextField extraF = styledField();
+
+        emailF.setText(isCalisan ? girisYapanCalisan.getEmail() : girisYapanMusteri.getEmail());
+        sifreF.setText(isCalisan ? girisYapanCalisan.getPassword() : girisYapanMusteri.getPassword());
+
+        // Başlık
+        JLabel title = new JLabel("👤 Profil Bilgilerim");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        title.setForeground(ACCENT_BLUE);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        card.add(title, gbc);
+
+        // Kilitli Bilgiler (TC ve İsim)
+        gbc.gridwidth = 1;
+        addProfilRow(card, "TC Kimlik (Değiştirilemez):", new JLabel(tc), gbc, 1);
+        addProfilRow(card, "Ad Soyad (Değiştirilemez):", new JLabel(ad), gbc, 2);
+
+        // Değiştirilebilir Bilgiler
+        addProfilRow(card, "E-posta Adresi:", emailF, gbc, 3);
+        addProfilRow(card, "Sistem Şifresi:", sifreF, gbc, 4);
+
+        if (isCalisan) {
+            extraF.setText(girisYapanCalisan.getShift());
+            addProfilRow(card, "Çalışma Vardiyası:", extraF, gbc, 5);
+        } else {
+            extraF.setText(girisYapanMusteri.getPhone());
+            addProfilRow(card, "İletişim Telefonu:", extraF, gbc, 5);
+        }
+
+        // Güncelleme Butonu
+        JButton guncelleBtn = styledButton("Profilimi Güncelle", ACCENT_GREEN);
+        gbc.gridx = 0;
+        gbc.gridy = 6;
+        gbc.gridwidth = 2;
+        gbc.insets = new Insets(25, 10, 10, 10);
+        card.add(guncelleBtn, gbc);
+
+        guncelleBtn.addActionListener(e -> {
+            try {
+                if (isCalisan) {
+                    girisYapanCalisan.setEmail(emailF.getText().trim());
+                    girisYapanCalisan.setPassword(sifreF.getText().trim());
+                    girisYapanCalisan.setShift(extraF.getText().trim());
+                    // Buraya Veritabanı güncelleme kodu gelebilir: VeritabaniIslemleri.calisanGuncelle(girisYapanCalisan);
+                } else {
+                    girisYapanMusteri.setEmail(emailF.getText().trim());
+                    girisYapanMusteri.setPassword(sifreF.getText().trim());
+                    girisYapanMusteri.setPhone(extraF.getText().trim());
+                    // Buraya Veritabanı güncelleme kodu gelebilir: VeritabaniIslemleri.musteriGuncelle(girisYapanMusteri);
+                }
+                setStatus("✅ Profil bilgileriniz güncellendi.");
+                JOptionPane.showMessageDialog(this, "Bilgileriniz başarıyla kaydedildi!", "Profil", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                showError("Hata oluştu: " + ex.getMessage());
+            }
+        });
+
+        mainPanel.add(card, BorderLayout.NORTH);
+        return mainPanel;
+    }
+
+    // Profil satırı oluşturmak için yardımcı metot
+    private void addProfilRow(JPanel p, String text, JComponent comp, GridBagConstraints gbc, int y) {
+        gbc.gridy = y;
+        gbc.gridx = 0;
+        JLabel lbl = new JLabel(text);
+        lbl.setForeground(TEXT_MUTED);
+        p.add(lbl, gbc);
+
+        gbc.gridx = 1;
+        if (comp instanceof JLabel) {
+            comp.setForeground(TEXT_PRIMARY);
+        }
+        p.add(comp, gbc);
     }
 
     private void showYeniBasvuruDialog() {

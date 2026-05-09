@@ -256,14 +256,16 @@ public class BarinakGUI extends JFrame {
             try {
                 int calisanIdx = calisanBox.getSelectedIndex();
                 Calisan seciliCalisan = calisanlar.get(calisanIdx);
-                int animalId = Integer.parseInt(idF.getText().trim());
+                int animalId = BarinakIstisnasi.tamsayiCevir(idF.getText(), "Hayvan ID");
                 String ad = adF.getText().trim();
-                int yas = Integer.parseInt(yasF.getText().trim());
+                int yas = BarinakIstisnasi.tamsayiCevir(yasF.getText(), "Yaş");
                 String saglik = saglikF.getText().trim();
                 String irk = irkF.getText().trim();
 
-                String tur = turBox.getSelectedIndex() == 0 ? "Köpek" : "Kedi";
+                BarinakIstisnasi.bosAlanKontrolu("Ad, Sağlık Durumu ve Irk alanları zorunludur.", ad, saglik, irk);
 
+                String tur = turBox.getSelectedIndex() == 0 ? "Köpek" : "Kedi";
+                
                 Hayvan yeni;
                 if (turBox.getSelectedIndex() == 0) {
                     yeni = new Kopek(animalId, ad, tur, yas, saglik, irk);
@@ -278,8 +280,6 @@ public class BarinakGUI extends JFrame {
                 dlg.dispose();
             } catch (BarinakIstisnasi ex) {
                 showError(ex.getMessage());
-            } catch (NumberFormatException ex) {
-                showError("ID ve Yaş alanları sayısal olmalıdır.");
             }
         });
 
@@ -354,8 +354,8 @@ public class BarinakGUI extends JFrame {
         JButton kaydetBtn = styledButton("Kaydet", ACCENT_GREEN);
         kaydetBtn.addActionListener(e -> {
             try {
-                long tc = Long.parseLong(tcF.getText().trim());
-                tcDogrulaUI(tc);
+                long tc = BarinakIstisnasi.uzunSayiCevir(tcF.getText(), "TC Kimlik No");
+                BarinakIstisnasi.tcDogrula(tc);
 
                 // Duplicate kontrol
                 for (Musteri m : yonetici.tumMusterileriListele()) {
@@ -371,9 +371,8 @@ public class BarinakGUI extends JFrame {
                 String adres = adresF.getText().trim();
                 String tel = telF.getText().trim();
 
-                if (ad.isEmpty() || email.isEmpty() || sifre.isEmpty() || kod.isEmpty()) {
-                    throw new BarinakIstisnasi("Ad, e-posta, şifre ve müşteri kodu zorunludur.");
-                }
+                BarinakIstisnasi.bosAlanKontrolu("Ad, E-posta, Şifre ve Müşteri Kodu zorunludur.", ad, email, sifre, kod);
+                
                 if (!tel.matches("^[0-9]{10,11}$")) {
                     throw new BarinakIstisnasi("Telefon 10-11 haneli olmalıdır.");
                 }
@@ -384,8 +383,6 @@ public class BarinakGUI extends JFrame {
                 dlg.dispose();
             } catch (BarinakIstisnasi ex) {
                 showError(ex.getMessage());
-            } catch (NumberFormatException ex) {
-                showError("TC Kimlik No sayısal olmalıdır.");
             }
         });
 
@@ -465,8 +462,8 @@ public class BarinakGUI extends JFrame {
         JButton kaydetBtn = styledButton("Kaydet", ACCENT_GREEN);
         kaydetBtn.addActionListener(e -> {
             try {
-                long tc = Long.parseLong(tcF.getText().trim());
-                tcDogrulaUI(tc);
+                long tc = BarinakIstisnasi.uzunSayiCevir(tcF.getText(), "TC Kimlik No");
+                BarinakIstisnasi.tcDogrula(tc);
 
                 for (Calisan c : yonetici.tumCalisanlariListele()) {
                     if (c.getId() == tc) {
@@ -482,22 +479,16 @@ public class BarinakGUI extends JFrame {
                 String extraInfo = extraInfoF.getText().trim();
                 int rolSecim = rolBox.getSelectedIndex();
 
-                if (ad.isEmpty() || email.isEmpty() || sifre.isEmpty() || kod.isEmpty()) {
-                    throw new BarinakIstisnasi("Ad, e-posta, şifre ve kod zorunludur.");
-                }
+                BarinakIstisnasi.bosAlanKontrolu("Ad, E-posta, Şifre ve Kod zorunludur.", ad, email, sifre, kod);
 
                 Calisan yeniCalisan;
                 if (rolSecim == 0) {
                     yeniCalisan = new Yonetici(tc, ad, email, sifre, kod, vardiya);
                 } else if (rolSecim == 1) {
-                    if (extraInfo.isEmpty()) {
-                        throw new BarinakIstisnasi("Veteriner için uzmanlık alanı (Ek Bilgi) girmelisiniz.");
-                    }
+                    BarinakIstisnasi.bosAlanKontrolu("Veteriner uzmanlık alanı zorunludur.", extraInfo);
                     yeniCalisan = new Veteriner(tc, ad, email, sifre, kod, vardiya, extraInfo);
                 } else {
-                    if (extraInfo.isEmpty()) {
-                        throw new BarinakIstisnasi("Bakıcı için sorumlu bölge (Ek Bilgi) girmelisiniz.");
-                    }
+                    BarinakIstisnasi.bosAlanKontrolu("Bakıcı bölge bilgisi zorunludur.", extraInfo);
                     yeniCalisan = new Bakici(tc, ad, email, sifre, kod, vardiya, extraInfo);
                 }
 
@@ -507,8 +498,6 @@ public class BarinakGUI extends JFrame {
                 dlg.dispose();
             } catch (BarinakIstisnasi ex) {
                 showError(ex.getMessage());
-            } catch (NumberFormatException ex) {
-                showError("TC Kimlik No sayısal olmalıdır.");
             }
         });
 
@@ -1023,24 +1012,6 @@ public class BarinakGUI extends JFrame {
         p.add(v);
     }
 
-    private static void tcDogrulaUI(long id) throws BarinakIstisnasi {
-        String s = String.valueOf(Math.abs(id));
-        if (s.length() != 11) {
-            throw new BarinakIstisnasi("TC 11 haneli olmalıdır. Girilen: " + s.length() + " hane.");
-        }
-        int toplam = 0;
-        for (int i = 0; i < 10; i++) {
-            toplam += Character.getNumericValue(s.charAt(i));
-        }
-        int son = Character.getNumericValue(s.charAt(10));
-        if (son % 2 != 0) {
-            throw new BarinakIstisnasi("TC'nin son hanesi çift olmalıdır.");
-        }
-        if (toplam % 10 != son) {
-            throw new BarinakIstisnasi("Geçersiz TC Kimlik Numarası.");
-        }
-    }
-
     private static JPanel darkPanel(LayoutManager layout) {
         JPanel p = new JPanel(layout);
         p.setBackground(BG_DARK);
@@ -1243,7 +1214,7 @@ public class BarinakGUI extends JFrame {
 
         girisBtn.addActionListener(e -> {
             try {
-                long tc = Long.parseLong(tcF.getText().trim());
+                long tc = BarinakIstisnasi.uzunSayiCevir(tcF.getText(), "TC Kimlik No");
                 String sifre = new String(sifreF.getPassword()).trim();
                 boolean calisanMi = turBox.getSelectedIndex() == 0;
 
@@ -1280,8 +1251,8 @@ public class BarinakGUI extends JFrame {
                     BarinakGUI gui = new BarinakGUI(null, bulunan);
                     gui.setVisible(true);
                 }
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(dlg, "TC sayısal olmalıdır!", "Hata", JOptionPane.ERROR_MESSAGE);
+            } catch (BarinakIstisnasi ex) {
+                JOptionPane.showMessageDialog(dlg, ex.getMessage(), "Hata", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -1337,8 +1308,8 @@ public class BarinakGUI extends JFrame {
         JButton kaydetBtn = styledButton("Kayıt Ol", ACCENT_GREEN);
         kaydetBtn.addActionListener(e -> {
             try {
-                long tc = Long.parseLong(tcF.getText().trim());
-                tcDogrulaUI(tc);
+                long tc = BarinakIstisnasi.uzunSayiCevir(tcF.getText(), "TC Kimlik No");
+                BarinakIstisnasi.tcDogrula(tc);
 
                 BarinakYoneticisi yonetici = BarinakYoneticisi.getInstance();
                 for (Musteri m : yonetici.tumMusterileriListele()) {
@@ -1350,17 +1321,13 @@ public class BarinakGUI extends JFrame {
                 String ad = adF.getText().trim(), email = emailF.getText().trim(), sifre = new String(sifreF.getPassword()).trim();
                 String kod = kodF.getText().trim(), adres = adresF.getText().trim(), tel = telF.getText().trim();
 
-                if (ad.isEmpty() || email.isEmpty() || sifre.isEmpty() || kod.isEmpty()) {
-                    throw new BarinakIstisnasi("Lütfen zorunlu alanları doldurun.");
-                }
+                BarinakIstisnasi.bosAlanKontrolu("Ad, E-posta, Şifre ve Kod alanları zorunludur.", ad, email, sifre, kod);
 
                 yonetici.musteriEkle(new Musteri(tc, ad, email, sifre, kod, adres, tel));
                 JOptionPane.showMessageDialog(dlg, "Kayıt Başarılı! Şimdi giriş yapabilirsiniz.", "Başarılı", JOptionPane.INFORMATION_MESSAGE);
                 dlg.dispose();
             } catch (BarinakIstisnasi ex) {
                 JOptionPane.showMessageDialog(dlg, ex.getMessage(), "Hata", JOptionPane.ERROR_MESSAGE);
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(dlg, "TC sayısal olmalıdır.", "Hata", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -1377,14 +1344,13 @@ public class BarinakGUI extends JFrame {
 
     private static void showStatikCalisanKayit(JDialog parent) {
         JDialog dlg = new JDialog(parent, "Çalışan Kayıt", true);
-        dlg.setSize(400, 520); // Yeni alan için pencere boyutu biraz uzatıldı
+        dlg.setSize(400, 520);
         dlg.setLocationRelativeTo(parent);
         dlg.getContentPane().setBackground(BG_PANEL);
         dlg.setLayout(new BorderLayout(0, 8));
 
         JPanel form = formPanel();
 
-        // YENİ: Kurum Onay Kodu Alanı
         JPasswordField kurumKoduF = new JPasswordField();
         kurumKoduF.setBackground(BG_CARD);
         kurumKoduF.setForeground(TEXT_PRIMARY);
@@ -1407,7 +1373,7 @@ public class BarinakGUI extends JFrame {
         JTextField vardiyaF = styledField();
         JTextField extraInfoF = styledField();
 
-        addFormRow(form, "Kurum Onay Kodu:", kurumKoduF); // Eklenen güvenlik alanı
+        addFormRow(form, "Kurum Onay Kodu:", kurumKoduF);
         addFormRow(form, "TC Kimlik No:", tcF);
         addFormRow(form, "Ad Soyad:", adF);
         addFormRow(form, "E-posta:", emailF);
@@ -1420,14 +1386,13 @@ public class BarinakGUI extends JFrame {
         JButton kaydetBtn = styledButton("Kayıt Ol", ACCENT_GREEN);
         kaydetBtn.addActionListener(e -> {
             try {
-                // YENİ: Şifre Doğrulama Kontrolü
                 String girilenKurumKodu = new String(kurumKoduF.getPassword()).trim();
                 if (!girilenKurumKodu.equals("BARINAK2026")) {
-                    throw new BarinakIstisnasi("Geçersiz Kurum Onay Kodu! Sisteme yetkisiz çalışan kaydı yapılamaz.");
+                    throw new BarinakIstisnasi("Geçersiz Kurum Onay Kodu!");
                 }
 
-                long tc = Long.parseLong(tcF.getText().trim());
-                tcDogrulaUI(tc);
+                long tc = BarinakIstisnasi.uzunSayiCevir(tcF.getText(), "TC Kimlik No");
+                BarinakIstisnasi.tcDogrula(tc);
 
                 BarinakYoneticisi yonetici = BarinakYoneticisi.getInstance();
                 for (Calisan c : yonetici.tumCalisanlariListele()) {
@@ -1436,40 +1401,28 @@ public class BarinakGUI extends JFrame {
                     }
                 }
 
-                String ad = adF.getText().trim();
-                String email = emailF.getText().trim();
-                String sifre = new String(sifreF.getPassword()).trim();
-                String kod = kodF.getText().trim();
-                String vardiya = vardiyaF.getText().trim();
-                String extraInfo = extraInfoF.getText().trim();
+                String ad = adF.getText().trim(), email = emailF.getText().trim(), sifre = new String(sifreF.getPassword()).trim();
+                String kod = kodF.getText().trim(), vardiya = vardiyaF.getText().trim(), extraInfo = extraInfoF.getText().trim();
                 int rolSecim = rolBox.getSelectedIndex();
 
-                if (ad.isEmpty() || email.isEmpty() || sifre.isEmpty() || kod.isEmpty()) {
-                    throw new BarinakIstisnasi("Lütfen zorunlu alanları doldurun.");
-                }
+                BarinakIstisnasi.bosAlanKontrolu("Ad, E-posta, Şifre ve Kod zorunludur.", ad, email, sifre, kod);
 
                 Calisan yeniCalisan;
                 if (rolSecim == 0) {
                     yeniCalisan = new Yonetici(tc, ad, email, sifre, kod, vardiya);
                 } else if (rolSecim == 1) {
-                    if (extraInfo.isEmpty()) {
-                        throw new BarinakIstisnasi("Veteriner için uzmanlık alanı (Ek Bilgi) girmelisiniz.");
-                    }
+                    BarinakIstisnasi.bosAlanKontrolu("Veteriner uzmanlık alanı zorunludur.", extraInfo);
                     yeniCalisan = new Veteriner(tc, ad, email, sifre, kod, vardiya, extraInfo);
                 } else {
-                    if (extraInfo.isEmpty()) {
-                        throw new BarinakIstisnasi("Bakıcı için sorumlu bölge (Ek Bilgi) girmelisiniz.");
-                    }
+                    BarinakIstisnasi.bosAlanKontrolu("Bakıcı bölge bilgisi zorunludur.", extraInfo);
                     yeniCalisan = new Bakici(tc, ad, email, sifre, kod, vardiya, extraInfo);
                 }
 
                 yonetici.calisanEkle(yeniCalisan);
-                JOptionPane.showMessageDialog(dlg, "Kayıt Başarılı! Şimdi giriş yapabilirsiniz.", "Başarılı", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(dlg, "Kayıt Başarılı! Giriş yapabilirsiniz.", "Başarılı", JOptionPane.INFORMATION_MESSAGE);
                 dlg.dispose();
             } catch (BarinakIstisnasi ex) {
                 JOptionPane.showMessageDialog(dlg, ex.getMessage(), "Hata", JOptionPane.ERROR_MESSAGE);
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(dlg, "TC sayısal olmalıdır.", "Hata", JOptionPane.ERROR_MESSAGE);
             }
         });
 

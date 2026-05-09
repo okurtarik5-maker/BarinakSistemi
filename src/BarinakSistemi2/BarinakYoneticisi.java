@@ -11,6 +11,8 @@ public class BarinakYoneticisi {
 	private List<Musteri>              musteriler;
 	private List<SahiplenmeBasvurusu>  basvurular;
 
+    //-----Singleton-----
+	
 	private static BarinakYoneticisi instance;
 
 	public static BarinakYoneticisi getInstance() {

@@ -8,27 +8,25 @@ import java.awt.event.*;
 import java.util.Date;
 import java.util.List;
 
-
 public class BarinakGUI extends JFrame {
 
     // ── Renkler ──────────────────────────────────────────────────────────────────────────────────────────
-    private static final Color BG_DARK = new Color(18, 18, 24);    
-    private static final Color BG_PANEL = new Color(28, 28, 36);   
-    private static final Color BG_CARD = new Color(35, 35, 45);    
-    private static final Color ACCENT_BLUE = new Color(88, 166, 255);  
-    private static final Color ACCENT_GREEN = new Color(46, 160, 67);   
-    private static final Color ACCENT_RED = new Color(248, 81, 73);    
-    private static final Color ACCENT_ORANGE = new Color(216, 141, 32);  
-    private static final Color TEXT_PRIMARY = new Color(240, 246, 252); 
-    private static final Color TEXT_SECONDARY = new Color(139, 148, 158); 
-    private static final Color TEXT_MUTED = new Color(110, 118, 129); 
-    private static final Color BORDER_COLOR = new Color(48, 54, 61);    
+    private static final Color BG_DARK = new Color(18, 18, 24);
+    private static final Color BG_PANEL = new Color(28, 28, 36);
+    private static final Color BG_CARD = new Color(35, 35, 45);
+    private static final Color ACCENT_BLUE = new Color(88, 166, 255);
+    private static final Color ACCENT_GREEN = new Color(46, 160, 67);
+    private static final Color ACCENT_RED = new Color(248, 81, 73);
+    private static final Color ACCENT_ORANGE = new Color(216, 141, 32);
+    private static final Color TEXT_PRIMARY = new Color(240, 246, 252);
+    private static final Color TEXT_SECONDARY = new Color(139, 148, 158);
+    private static final Color TEXT_MUTED = new Color(110, 118, 129);
+    private static final Color BORDER_COLOR = new Color(48, 54, 61);
 
     private BarinakYoneticisi yonetici;
     private JTabbedPane tabPane;
 
- 
-   // Tablolar
+    // Tablolar
     private JTable hayvanTable, musteriTable, calisanTable, basvuruTable, musteriBasvuruTable;
     private DefaultTableModel hayvanModel, musteriModel, calisanModel, basvuruModel, musteriBasvuruModel;
 
@@ -82,10 +80,25 @@ public class BarinakGUI extends JFrame {
         logo.setForeground(TEXT_PRIMARY);
         header.add(logo, BorderLayout.WEST);
 
+        // --- YENİ: Giriş Ekranına Dön Butonu ---
+        JButton cikisBtn = styledButton("↩ Oturumu Kapat", ACCENT_RED);
+        cikisBtn.addActionListener(e -> {
+            int secim = JOptionPane.showConfirmDialog(this,
+                    "Oturumu kapatıp giriş ekranına dönmek istediğinize emin misiniz?",
+                    "Oturum Kapatılıyor", JOptionPane.YES_NO_OPTION);
+
+            if (secim == JOptionPane.YES_OPTION) {
+                this.dispose();       // Mevcut ana pencereyi (GUI) kapatır
+                showLoginDialog();    // Giriş ekranını (Static metod) tekrar açar
+            }
+        });
+
         JButton raporBtn = styledButton("📊 Durum Raporu", ACCENT_BLUE);
         raporBtn.addActionListener(e -> showDurumRaporu());
+
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         right.setBackground(BG_PANEL);
+        right.add(cikisBtn); // Çıkış butonu eklendi
         right.add(raporBtn);
         header.add(right, BorderLayout.EAST);
 
@@ -126,7 +139,7 @@ public class BarinakGUI extends JFrame {
         return bar;
     }
 
-        // ── Hayvanlar Sekmesi ─────────────────────────────────────────────────────────
+    // ── Hayvanlar Sekmesi ─────────────────────────────────────────────────────────
     private JPanel buildHayvanlarPanel() {
         JPanel panel = darkPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
@@ -402,7 +415,7 @@ public class BarinakGUI extends JFrame {
         JComboBox<String> rolBox = styledCombo(roller);
 
         JTextField vardiyaF = styledField();
-        JTextField extraInfoF = styledField(); 
+        JTextField extraInfoF = styledField();
 
         addFormRow(form, "TC Kimlik No:", tcF);
         addFormRow(form, "Ad Soyad:", adF);
@@ -492,10 +505,8 @@ public class BarinakGUI extends JFrame {
 
         JPanel btnRow = darkPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
 
-        JButton yeniBasvuruBtn = styledButton("➕  Yeni Başvuru", ACCENT_GREEN);
-        yeniBasvuruBtn.addActionListener(e -> showYeniBasvuruDialog());
-        btnRow.add(yeniBasvuruBtn);
-
+        // DİKKAT: "Yeni Başvuru" butonu buradan tamamen kaldırıldı!
+        // SADECE Yönetici onay/red butonlarını görebilir
         if (girisYapanCalisan instanceof Yonetici) {
             JButton onaylaBtn = styledButton("✔  Onayla", ACCENT_GREEN);
             JButton reddetBtn = styledButton("✘  Reddet", ACCENT_RED);
@@ -510,7 +521,6 @@ public class BarinakGUI extends JFrame {
         btnRow.add(yenileBtn);
 
         panel.add(btnRow, BorderLayout.SOUTH);
-
         return panel;
     }
 
@@ -551,63 +561,62 @@ public class BarinakGUI extends JFrame {
     }
 
     private void showYeniBasvuruDialog() {
-        List<Musteri> musteriler = yonetici.tumMusterileriListele();
         List<Hayvan> hayvanlar = yonetici.tumHayvanlariListele();
 
-        if (musteriler.isEmpty()) {
-            showError("Sistemde kayıtlı müşteri yok.");
+        // Güvenlik Kontrolü: Eğer bir şekilde çalışan buraya ulaşırsa engelle
+        if (girisYapanMusteri == null) {
+            showError("Sadece müşteriler sahiplenme başvurusu yapabilir.");
             return;
         }
+
         if (hayvanlar.isEmpty()) {
             showError("Barınakta sahiplenilebilecek hayvan yok.");
             return;
         }
 
-        JDialog dlg = dialog("Sahiplenme Başvurusu", 380, 280);
+        JDialog dlg = dialog("Sahiplenme Başvurusu", 380, 240);
         JPanel form = formPanel();
 
-        String[] mArr = musteriler.stream()
-                .map(m -> m.getName() + " (" + m.getCustomerId() + ")")
-                .toArray(String[]::new);
+        // Giriş yapan müşteriyi sabit metin olarak gösteriyoruz (Seçmeli değil)
+        JLabel musteriBilgi = new JLabel(girisYapanMusteri.getName() + " (" + girisYapanMusteri.getCustomerId() + ")");
+        musteriBilgi.setForeground(ACCENT_BLUE);
+        musteriBilgi.setFont(new Font("Segoe UI", Font.BOLD, 13));
+
         String[] hArr = hayvanlar.stream()
                 .map(h -> h.getName() + " | ID:" + h.getAnimalId() + " | " + h.getTur())
                 .toArray(String[]::new);
-
-        JComboBox<String> mBox = styledCombo(mArr);
         JComboBox<String> hBox = styledCombo(hArr);
+
         JPasswordField sifreF = new JPasswordField();
         sifreF.setBackground(BG_CARD);
         sifreF.setForeground(TEXT_PRIMARY);
         sifreF.setCaretColor(TEXT_PRIMARY);
         sifreF.setBorder(fieldBorder());
 
-        addFormRow(form, "Müşteri:", mBox);
-        addFormRow(form, "Hayvan:", hBox);
-        addFormRow(form, "Müşteri Şifresi:", sifreF);
+        addFormRow(form, "Başvuru Sahibi:", musteriBilgi);
+        addFormRow(form, "Hayvan Seçin:", hBox);
+        addFormRow(form, "Onay Şifreniz:", sifreF);
 
-        JButton kaydetBtn = styledButton("Başvuru Yap", ACCENT_GREEN);
+        JButton kaydetBtn = styledButton("Başvuruyu Gönder", ACCENT_GREEN);
         kaydetBtn.addActionListener(e -> {
             try {
-                Musteri seciliMusteri = musteriler.get(mBox.getSelectedIndex());
                 Hayvan seciliHayvan = hayvanlar.get(hBox.getSelectedIndex());
-
-                // Şifre doğrulama
                 String girilenSifre = new String(sifreF.getPassword()).trim();
-                if (!seciliMusteri.getPassword().equals(girilenSifre)) {
-                    showError("Müşteri şifresi yanlış!");
+
+                // Kendi şifresini doğrula
+                if (!girisYapanMusteri.getPassword().equals(girilenSifre)) {
+                    showError("Şifre yanlış, başvuru tamamlanamadı!");
                     return;
                 }
 
                 int yeniId = VeritabaniIslemleri.sonBasvuruIdGetir() + 1;
                 SahiplenmeBasvurusu basvuru = new SahiplenmeBasvurusu(
-                        yeniId, "BEKLEMEDE", new Date(), seciliMusteri, seciliHayvan
+                        yeniId, "BEKLEMEDE", new Date(), girisYapanMusteri, seciliHayvan
                 );
-                seciliMusteri.basvuruYap();
+
                 yonetici.basvuruKaydet(basvuru);
-                
-                refreshAllTables(); 
-                
-                setStatus("✅  Başvuru #" + yeniId + " oluşturuldu.");
+                refreshAllTables();
+                setStatus("✅  Başvuru #" + yeniId + " merkeze iletildi.");
                 dlg.dispose();
             } catch (BarinakIstisnasi ex) {
                 showError(ex.getMessage());
@@ -696,6 +705,7 @@ public class BarinakGUI extends JFrame {
         refreshCalisanTable();
         refreshBasvuruTable();
     }
+
     private void refreshMusteriBasvuruTable() {
         if (musteriBasvuruModel == null || girisYapanMusteri == null) {
             return;
@@ -942,7 +952,7 @@ public class BarinakGUI extends JFrame {
             setBackground(sel ? ACCENT_BLUE.darker() : BG_CARD);
 
             String s = val != null ? val.toString() : "";
-            setText(s); 
+            setText(s);
 
             if (s.equalsIgnoreCase("BEKLEMEDE")) {
                 setForeground(ACCENT_ORANGE);
@@ -961,14 +971,13 @@ public class BarinakGUI extends JFrame {
     private static void showLoginDialog() {
         JDialog dlg = new JDialog();
         dlg.setTitle("🐾 Akıllı Barınak Sistemi - Giriş");
-        dlg.setSize(400, 360); 
+        dlg.setSize(400, 360);
         dlg.setLocationRelativeTo(null);
         dlg.setModal(true);
         dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dlg.getContentPane().setBackground(BG_DARK);
         dlg.setLayout(new BorderLayout(0, 0));
 
-        
         JLabel baslik = new JLabel("🐾  Barınak Sistemi", SwingConstants.CENTER);
         baslik.setFont(new Font("Segoe UI", Font.BOLD, 20));
         baslik.setForeground(TEXT_PRIMARY);
@@ -977,7 +986,6 @@ public class BarinakGUI extends JFrame {
         baslik.setOpaque(true);
         dlg.add(baslik, BorderLayout.NORTH);
 
-        
         JPanel form = new JPanel(new GridLayout(3, 2, 8, 12));
         form.setBackground(BG_PANEL);
         form.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
@@ -1022,10 +1030,8 @@ public class BarinakGUI extends JFrame {
 
         cikisBtn.addActionListener(e -> System.exit(0));
 
-       
         kayitBtn.addActionListener(e -> showKayitSecimDialog(dlg));
 
-        
         girisBtn.addActionListener(e -> {
             try {
                 long tc = Long.parseLong(tcF.getText().trim());
@@ -1168,7 +1174,7 @@ public class BarinakGUI extends JFrame {
         dlg.setLayout(new BorderLayout(0, 8));
 
         JPanel form = formPanel();
-        
+
         // YENİ: Kurum Onay Kodu Alanı
         JPasswordField kurumKoduF = new JPasswordField();
         kurumKoduF.setBackground(BG_CARD);
@@ -1309,7 +1315,7 @@ public class BarinakGUI extends JFrame {
         }, BorderLayout.CENTER);
 
         JPanel bottom = darkPanel(new FlowLayout(FlowLayout.RIGHT));
-        
+
         if (girisYapanCalisan instanceof Veteriner) {
             JButton yeniKayitBtn = styledButton("➕ Yeni Kayıt Ekle", ACCENT_GREEN);
             yeniKayitBtn.addActionListener(e -> showYeniSaglikKaydiDialog(seciliHayvan, skModel));

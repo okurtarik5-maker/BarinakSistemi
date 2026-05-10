@@ -25,8 +25,6 @@ public class BarinakGUI extends JFrame {
 	private static final Color TEXT_MUTED = new Color(110, 118, 129);
 	private static final Color BORDER_COLOR = new Color(48, 54, 61);
 	
-	private static final Font EMOJI_FONT = new Font("Segoe UI Emoji", Font.PLAIN, 12);
-	private static final Font BOLD_EMOJI_FONT = new Font("Segoe UI Emoji", Font.BOLD, 13);
 
 	private BarinakYoneticisi yonetici;
 	private JTabbedPane tabPane;

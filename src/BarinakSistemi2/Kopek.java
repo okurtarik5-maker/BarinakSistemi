@@ -17,10 +17,11 @@ public class Kopek extends Hayvan {
 	}
 
 	public String getInfo() {
-		return "Köpeğin Id numarası: "+getAnimalId()+
-				"\nKöpeğin adı: "+getName()+
-				"\nKöpeğin türü: "+getTur()+
-				"\nKöpeğin yaşı: "+getYas()+
-				"\nKöpeğin ırkı: "+irk;
+		return "Köpeğin Id numarası: " + getAnimalId() +
+				"\nKöpeğin adı: " + getName() +
+				"\nKöpeğin türü: " + getTur() +
+				"\nKöpeğin yaşı: " + getYas() +
+				"\nKöpeğin ırkı: " + irk +
+				"\nKöpeğin sahiplenme durumu: " + getDurum();
 	}
 }

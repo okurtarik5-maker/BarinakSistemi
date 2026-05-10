@@ -26,6 +26,7 @@ public class BarinakGUI extends JFrame {
 	private static final Color BORDER_COLOR = new Color(48, 54, 61);
 	
 
+
 	private BarinakYoneticisi yonetici;
 	private JTabbedPane tabPane;
 
@@ -840,15 +841,12 @@ public class BarinakGUI extends JFrame {
 
 			// KRİTİK GÜVENLİK KONTROLÜ
 			if (h != null) {
-				// Hayvan nesnesi varsa (sahiplenilmiş de olsa, barınakta da olsa) gösterir
 				mainP.add(new JLabel("Adı: " + h.getName()));
 				mainP.add(new JLabel("Tür / Irk: " + h.getTur() + " / "
 						+ (h instanceof Kedi ? ((Kedi) h).getIrk() : ((Kopek) h).getIrk())));
 				mainP.add(new JLabel("Yaş: " + h.getYas()));
 				mainP.add(new JLabel("Sağlık Durumu: " + h.getSaglikDurumu()));
-				mainP.add(new JLabel("Mevcut Durum: " + h.getDurum())); // Buraya durumunu da ekle (Sahiplenildi yazar)
 			} else {
-				// SADECE VE SADECE veri tamamen silinmişse buraya düşer (Çökmeyi engeller)
 				mainP.add(new JLabel("⚠️ Bu hayvanın detaylı verisi arşivden silinmiş."));
 			}
 
@@ -864,7 +862,6 @@ public class BarinakGUI extends JFrame {
 		}
 	}
 
-	// Yardımcı metot: Başlıkları belirgin yapmak için
 	private JLabel createDetailHeader(String text) {
 		JLabel l = new JLabel(text);
 		l.setFont(new Font("Segoe UI", Font.BOLD, 15));
@@ -873,15 +870,14 @@ public class BarinakGUI extends JFrame {
 		return l;
 	}
 
-// ── Tablo Yenileme (Modern ve Kısa Yapı) ───────────────────────────────────
+// ── Tablo Yenileme  ───────────────────────────────────
 
-	// Yardımcı Metot: Tüm tablolar için ortak yükleme kuralı
 	private <T> void populateTable(DefaultTableModel model, List<T> dataList, Function<T, Object[]> mapper) {
 		if (model == null || dataList == null)
 			return;
-		model.setRowCount(0); // Eski verileri temizle
+		model.setRowCount(0); 
 		for (T item : dataList) {
-			model.addRow(mapper.apply(item)); // Veriyi satıra çevir ve ekle
+			model.addRow(mapper.apply(item)); 
 		}
 	}
 
@@ -1046,10 +1042,10 @@ public class BarinakGUI extends JFrame {
 		t.setSelectionForeground(Color.WHITE);
 		t.setGridColor(BORDER_COLOR);
 		t.setRowHeight(26);
-		t.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 12));
+		t.setFont(new Font("Segoe UI ", Font.PLAIN, 12));
 		t.getTableHeader().setBackground(BG_PANEL);
 		t.getTableHeader().setForeground(TEXT_MUTED);
-		t.getTableHeader().setFont(new Font("Segoe UI Emoji", Font.BOLD, 12));
+		t.getTableHeader().setFont(new Font("Segoe UI ", Font.BOLD, 12));
 		t.setShowHorizontalLines(true);
 		t.setShowVerticalLines(false);
 		t.setIntercellSpacing(new Dimension(0, 1));

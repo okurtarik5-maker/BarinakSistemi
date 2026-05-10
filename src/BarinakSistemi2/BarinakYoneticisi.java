@@ -11,6 +11,8 @@ public class BarinakYoneticisi {
 	private VeriDeposu<Musteri>              musteriler;
 	private VeriDeposu<SahiplenmeBasvurusu>  basvurular;
 
+	//------Singleton-----
+	
 	private static BarinakYoneticisi instance;
 
 	public static BarinakYoneticisi getInstance() {

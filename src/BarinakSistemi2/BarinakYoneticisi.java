@@ -11,7 +11,7 @@ public class BarinakYoneticisi {
 	private VeriDeposu<Musteri>              musteriler;
 	private VeriDeposu<SahiplenmeBasvurusu>  basvurular;
 
-	//------Singleton-----
+	// ── Singleton ─────────────────────────────────────────────────────────────
 	
 	private static BarinakYoneticisi instance;
 

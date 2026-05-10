@@ -24,6 +24,9 @@ public class BarinakGUI extends JFrame {
 	private static final Color TEXT_SECONDARY = new Color(139, 148, 158);
 	private static final Color TEXT_MUTED = new Color(110, 118, 129);
 	private static final Color BORDER_COLOR = new Color(48, 54, 61);
+	
+	private static final Font EMOJI_FONT = new Font("Segoe UI Emoji", Font.PLAIN, 12);
+	private static final Font BOLD_EMOJI_FONT = new Font("Segoe UI Emoji", Font.BOLD, 13);
 
 	private BarinakYoneticisi yonetici;
 	private JTabbedPane tabPane;
@@ -34,7 +37,6 @@ public class BarinakGUI extends JFrame {
 
 	// Durum bar
 	private JLabel statusLabel;
-
 	private Calisan girisYapanCalisan;
 	private Musteri girisYapanMusteri;
 
@@ -82,8 +84,8 @@ public class BarinakGUI extends JFrame {
 		leftPanel.setBackground(BG_PANEL);
 
 		// Logo Metni
-		JLabel logo = new JLabel("Akıllı Barınak Sistemi");
-		logo.setFont(new Font("Segoe UI", Font.BOLD, 18));
+		JLabel logo = new JLabel("🐾 Akıllı Barınak Sistemi");
+		logo.setFont(new Font("Segoe UI Emoji", Font.BOLD, 18));
 		logo.setForeground(TEXT_PRIMARY);
 		leftPanel.add(logo);
 
@@ -104,8 +106,8 @@ public class BarinakGUI extends JFrame {
 		}
 
 		// Kullanıcı Bilgi Etiketi
-		JLabel userLabel = new JLabel(isim + " ");
-		userLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+		JLabel userLabel = new JLabel("👤 " + isim + " ");
+		userLabel.setFont(new Font("Segoe UI Emoji", Font.BOLD, 14));
 		userLabel.setForeground(TEXT_PRIMARY);
 		leftPanel.add(userLabel);
 
@@ -121,7 +123,7 @@ public class BarinakGUI extends JFrame {
 		rightPanel.setBackground(BG_PANEL);
 
 		// Oturumu Kapat Butonu
-		JButton cikisBtn = styledButton("[X] Oturumu Kapat", ACCENT_RED);
+		JButton cikisBtn = styledButton("Oturumu Kapat", ACCENT_RED);
 		cikisBtn.addActionListener(e -> {
 			int secim = JOptionPane.showConfirmDialog(this, "Oturumu kapatıp giriş ekranına dönmek istiyor musunuz?",
 					"Çıkış", JOptionPane.YES_NO_OPTION);
@@ -130,9 +132,9 @@ public class BarinakGUI extends JFrame {
 				showLoginDialog();
 			}
 		});
-		
+
 		// Durum Raporu Butonu
-		JButton raporBtn = styledButton("[#] Durum Raporu", ACCENT_BLUE);
+		JButton raporBtn = styledButton("Durum Raporu", ACCENT_BLUE);
 		raporBtn.addActionListener(e -> showDurumRaporu());
 
 		rightPanel.add(cikisBtn);
@@ -146,21 +148,19 @@ public class BarinakGUI extends JFrame {
 		JTabbedPane tp = new JTabbedPane(JTabbedPane.TOP);
 		tp.setBackground(BG_DARK);
 		tp.setForeground(TEXT_PRIMARY);
-		tp.setFont(new Font("Segoe UI", Font.BOLD, 13));
+		tp.setFont(new Font("Segoe UI Emoji", Font.BOLD, 13));
 		tp.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
 		if (girisYapanCalisan != null) {
-			// Çalışan girişi — tüm sekmeler
-			tp.addTab(" [H] Hayvanlar", buildHayvanlarPanel());
-			tp.addTab(" [M] Müşteriler", buildMusterilerPanel());
-			tp.addTab(" [Ç] Çalışanlar", buildCalisanlarPanel());
-			tp.addTab(" [B] Başvurular", buildBasvurularPanel());
+			tp.addTab("🐾 Hayvanlar", buildHayvanlarPanel());
+			tp.addTab("👥 Müsteriler", buildMusterilerPanel());
+			tp.addTab("👷 Çalısanlar", buildCalisanlarPanel());
+			tp.addTab("📋 Basvurular", buildBasvurularPanel());
 		} else {
-			// Müşteri girişi — hayvanlar ve kendi başvuruları
-			tp.addTab("[H]  Hayvanlar", buildHayvanlarPanel()); // Müşteriye eklendi
-			tp.addTab("[M] Başvurularım", buildMusteriBasvurularPanel());
+			tp.addTab("🐾 Hayvanlar", buildHayvanlarPanel());
+			tp.addTab("📥 Basvurularım", buildMusteriBasvurularPanel());
 		}
-		tp.addTab("[P]  Profilim", buildProfilPanel());
+		tp.addTab("👤 Profilim", buildProfilPanel());
 		return tp;
 	}
 
@@ -169,8 +169,8 @@ public class BarinakGUI extends JFrame {
 		bar.setBackground(new Color(25, 28, 38));
 		bar.setBorder(new MatteBorder(1, 0, 0, 0, BORDER_COLOR));
 		bar.setPreferredSize(new Dimension(0, 28));
-		statusLabel = new JLabel("  Sistem hazır.");
-		statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+		statusLabel = new JLabel("✅ Sistem hazır.");
+		statusLabel.setFont(new Font("Segoe UI Emoji ", Font.PLAIN, 11));
 		statusLabel.setForeground(TEXT_MUTED);
 		bar.add(statusLabel, BorderLayout.WEST);
 		return bar;
@@ -519,8 +519,6 @@ public class BarinakGUI extends JFrame {
 
 		JPanel btnRow = darkPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
 
-		// DİKKAT: "Yeni Başvuru" butonu buradan tamamen kaldırıldı!
-		// SADECE Yönetici onay/red butonlarını görebilir
 		if (girisYapanCalisan instanceof Yonetici) {
 			JButton onaylaBtn = styledButton("[OK]  Onayla", ACCENT_GREEN);
 			JButton reddetBtn = styledButton("[X]  Reddet", ACCENT_RED);
@@ -534,7 +532,6 @@ public class BarinakGUI extends JFrame {
 		yenileBtn.addActionListener(e -> refreshBasvuruTable());
 		btnRow.add(yenileBtn);
 
-		// buildBasvurularPanel metodu içinde, diğer butonların yanına ekle:
 		JButton detayBtn = styledButton("[?] Detayları Gör", ACCENT_BLUE);
 		detayBtn.addActionListener(e -> {
 			int row = basvuruTable.getSelectedRow();
@@ -569,15 +566,12 @@ public class BarinakGUI extends JFrame {
 			}
 		}, BorderLayout.CENTER);
 
-		// --- Buton Satırı ---
 		JPanel btnRow = darkPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
 
-		// Yeni Başvuru Butonu
 		JButton yeniBtn = styledButton("[+]  Yeni Başvuru", ACCENT_GREEN);
 		yeniBtn.addActionListener(e -> showYeniBasvuruDialog());
 		btnRow.add(yeniBtn);
 
-		// --- YENİ: Müşteri İçin Detay Butonu ---
 		JButton detayBtn = styledButton("[?] Detayları Gör", ACCENT_BLUE);
 		detayBtn.addActionListener(e -> {
 			int row = musteriBasvuruTable.getSelectedRow();
@@ -585,13 +579,11 @@ public class BarinakGUI extends JFrame {
 				showError("Lütfen detayını görmek istediğiniz başvuruyu seçin.");
 				return;
 			}
-			// Başvuru No ilk sütunda (0. index)
 			int appId = (int) musteriBasvuruModel.getValueAt(row, 0);
 			showBasvuruDetayDialog(appId);
 		});
 		btnRow.add(detayBtn);
 
-		// Yenile Butonu
 		JButton yenileBtn = styledButton("[R]  Yenile", ACCENT_BLUE);
 		yenileBtn.addActionListener(e -> refreshMusteriBasvuruTable());
 		btnRow.add(yenileBtn);
@@ -606,8 +598,6 @@ public class BarinakGUI extends JFrame {
 	private JPanel buildProfilPanel() {
 		JPanel mainPanel = darkPanel(new BorderLayout());
 		mainPanel.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
-
-		// Bilgileri bir kart (panel) içinde toplayalım
 		JPanel card = new JPanel(new GridBagLayout());
 		card.setBackground(BG_PANEL);
 		card.setBorder(new LineBorder(BORDER_COLOR, 1, true));
@@ -615,12 +605,10 @@ public class BarinakGUI extends JFrame {
 		gbc.insets = new Insets(10, 10, 10, 10);
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 
-		// Kimin giriş yaptığını kontrol et
 		boolean isCalisan = (girisYapanCalisan != null);
 		String ad = isCalisan ? girisYapanCalisan.getName() : girisYapanMusteri.getName();
 		String tc = String.valueOf(isCalisan ? girisYapanCalisan.getId() : girisYapanMusteri.getId());
 
-		// Düzenlenebilir alanlar
 		JTextField emailF = styledField();
 		JTextField sifreF = styledField();
 		JTextField extraF = styledField();
@@ -628,9 +616,8 @@ public class BarinakGUI extends JFrame {
 		emailF.setText(isCalisan ? girisYapanCalisan.getEmail() : girisYapanMusteri.getEmail());
 		sifreF.setText(isCalisan ? girisYapanCalisan.getPassword() : girisYapanMusteri.getPassword());
 
-		// Başlık
 		JLabel title = new JLabel("👤 Profil Bilgilerim");
-		title.setFont(new Font("Segoe UI", Font.BOLD, 20));
+		title.setFont(new Font("Segoe UI Emoji", Font.BOLD, 20));
 		title.setForeground(ACCENT_BLUE);
 		gbc.gridx = 0;
 		gbc.gridy = 0;
@@ -958,12 +945,12 @@ public class BarinakGUI extends JFrame {
 		JPanel p = darkPanel(new GridLayout(6, 2, 10, 10));
 		p.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-		addRaporRow(p, "🐾  Toplam Hayvan", String.valueOf(hayvan));
-		addRaporRow(p, "👥  Kayıtlı Müşteri", String.valueOf(musteri));
-		addRaporRow(p, "👷  Aktif Çalışan", String.valueOf(calisan));
-		addRaporRow(p, "📋  Toplam Başvuru", String.valueOf(basvuru));
-		addRaporRow(p, "⏳  Bekleyen Başvuru", String.valueOf(bekleyen));
-		addRaporRow(p, "✅  İşlenen Başvuru", String.valueOf(basvuru - bekleyen));
+		addRaporRow(p, "Toplam Hayvan", String.valueOf(hayvan));
+		addRaporRow(p, "Kayıtlı Müşteri", String.valueOf(musteri));
+		addRaporRow(p, "Aktif Çalışan", String.valueOf(calisan));
+		addRaporRow(p, "Toplam Başvuru", String.valueOf(basvuru));
+		addRaporRow(p, " Bekleyen Başvuru", String.valueOf(bekleyen));
+		addRaporRow(p, "İşlenen Başvuru", String.valueOf(basvuru - bekleyen));
 
 		dlg.add(p);
 		dlg.setVisible(true);
@@ -1061,10 +1048,10 @@ public class BarinakGUI extends JFrame {
 		t.setSelectionForeground(Color.WHITE);
 		t.setGridColor(BORDER_COLOR);
 		t.setRowHeight(26);
-		t.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+		t.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 12));
 		t.getTableHeader().setBackground(BG_PANEL);
 		t.getTableHeader().setForeground(TEXT_MUTED);
-		t.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+		t.getTableHeader().setFont(new Font("Segoe UI Emoji", Font.BOLD, 12));
 		t.setShowHorizontalLines(true);
 		t.setShowVerticalLines(false);
 		t.setIntercellSpacing(new Dimension(0, 1));
@@ -1538,4 +1525,4 @@ public class BarinakGUI extends JFrame {
 			showLoginDialog();
 		});
 	}
-} 
+}
